@@ -1,0 +1,41 @@
+# ---- venv (a pasta raiz também é um virtualenv) ----
+Include/
+Lib/
+Scripts/
+pyvenv.cfg
+
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# ---- Dados locais / runtime ----
+data/*.db
+data/*.db-journal
+data/*.db-wal
+data/*.db-shm
+data/backups/
+*.log
+
+# ---- Build / empacotamento ----
+build/
+dist/
+*.spec.bak
+
+# ---- IDEs / SO ----
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# ---- Misc / uploads ----
+*.jpg
+*.jpeg
+*.png
+!resources/**/*.png
+!resources/**/*.jpg

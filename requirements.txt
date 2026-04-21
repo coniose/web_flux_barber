@@ -1,0 +1,12 @@
+# Runtime
+customtkinter==5.2.2
+matplotlib
+pillow
+openpyxl==3.1.5
+
+# Build
+pyinstaller
+
+# Dev / testes
+pytest==8.3.3
+pytest-cov==5.0.0
