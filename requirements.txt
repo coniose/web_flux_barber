@@ -4,6 +4,15 @@ matplotlib
 pillow
 openpyxl==3.1.5
 
+# Web
+flask
+flask-login
+werkzeug
+
+# CLI
+typer>=0.12
+rich>=13
+
 # Build
 pyinstaller
 
