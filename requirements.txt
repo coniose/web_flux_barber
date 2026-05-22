@@ -9,6 +9,7 @@ flask
 flask-login
 werkzeug
 gunicorn
+python-dotenv
 
 # CLI
 typer>=0.12
