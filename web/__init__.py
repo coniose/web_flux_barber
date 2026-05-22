@@ -1,0 +1,71 @@
+"""Flask application factory."""
+
+from __future__ import annotations
+
+import os
+from flask import Flask
+from flask_login import LoginManager
+
+from app.repositories.db import ensure_db
+
+login_manager = LoginManager()
+
+
+def create_app(test_config: dict | None = None) -> Flask:
+    app = Flask(__name__, template_folder="templates", static_folder="static")
+
+    app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "dev-secret-change-in-prod")
+    app.config["STRIPE_SECRET_KEY"] = os.environ.get("STRIPE_SECRET_KEY", "")
+    app.config["STRIPE_PUBLISHABLE_KEY"] = os.environ.get("STRIPE_PUBLISHABLE_KEY", "")
+    app.config["STRIPE_WEBHOOK_SECRET"] = os.environ.get("STRIPE_WEBHOOK_SECRET", "")
+
+    if test_config:
+        app.config.update(test_config)
+
+    # Garante DB inicializado (schema + seed + migrations + tabela usuario)
+    conn = ensure_db()
+    _ensure_usuario_table(conn)
+    conn.close()
+
+    login_manager.init_app(app)
+    login_manager.login_view = "auth.login"
+    login_manager.login_message = "Faça login para continuar."
+    login_manager.login_message_category = "info"
+
+    from web.models import User
+
+    @login_manager.user_loader
+    def load_user(user_id: str):
+        return User.get_by_id(int(user_id))
+
+    from web.auth.routes import auth_bp
+    from web.routes.dashboard import dashboard_bp
+    from web.routes.lancamento import lancamento_bp
+    from web.routes.receitas import receitas_bp
+    from web.routes.despesas import despesas_bp
+
+    app.register_blueprint(auth_bp)
+    app.register_blueprint(dashboard_bp)
+    app.register_blueprint(lancamento_bp)
+    app.register_blueprint(receitas_bp)
+    app.register_blueprint(despesas_bp)
+
+    return app
+
+
+def _ensure_usuario_table(conn) -> None:
+    conn.executescript("""
+        CREATE TABLE IF NOT EXISTS usuario (
+            id                     INTEGER PRIMARY KEY AUTOINCREMENT,
+            email                  TEXT    NOT NULL UNIQUE,
+            nome                   TEXT    NOT NULL,
+            senha_hash             TEXT    NOT NULL,
+            plano                  TEXT    NOT NULL DEFAULT 'free'
+                                           CHECK (plano IN ('free', 'pro')),
+            stripe_customer_id     TEXT,
+            stripe_subscription_id TEXT,
+            criado_em              TEXT    NOT NULL DEFAULT (datetime('now')),
+            ultimo_acesso          TEXT
+        );
+        CREATE INDEX IF NOT EXISTS idx_usuario_email ON usuario(email);
+    """)

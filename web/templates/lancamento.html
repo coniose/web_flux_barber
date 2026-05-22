@@ -1,0 +1,275 @@
+{% extends "base.html" %}
+{% block title %}Lançar — Flux Barber{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto space-y-6">
+
+  <div class="flex items-center justify-between">
+    <h1 class="text-xl font-bold text-white">Lançamento rápido</h1>
+  </div>
+
+  <!-- Tabs -->
+  <div class="flex gap-1 bg-gray-800 rounded-xl p-1 w-fit border border-gray-700">
+    <button onclick="showTab('atendimento')" id="tab-atendimento"
+            class="tab-btn px-5 py-2 text-sm font-medium rounded-lg transition-colors text-white bg-gray-700">
+      Atendimento
+    </button>
+    <button onclick="showTab('despesa')" id="tab-despesa"
+            class="tab-btn px-5 py-2 text-sm font-medium rounded-lg transition-colors text-gray-400 hover:text-white">
+      Despesa
+    </button>
+  </div>
+
+  <!-- Aba Atendimento -->
+  <div id="panel-atendimento">
+    <form method="POST" action="{{ url_for('lancamento.registrar_atendimento') }}" id="form-atendimento">
+      <input type="hidden" name="servico_id" id="servico_id_input">
+      <input type="hidden" name="valor" id="valor_input">
+      <input type="hidden" name="forma_pagamento" id="forma_input">
+
+      <!-- Serviços -->
+      <div class="mb-6">
+        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Selecione o serviço</p>
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+          {% for s in servicos %}
+          <button type="button"
+                  onclick="selecionarServico({{ s['id'] }}, {{ s['preco_padrao'] }}, '{{ s['nome'] | e }}')"
+                  data-id="{{ s['id'] }}"
+                  class="servico-btn bg-gray-800 hover:bg-gray-700 border border-gray-700 hover:border-brand/50
+                         rounded-xl p-3 text-left transition-all group">
+            <p class="text-sm font-medium text-white group-hover:text-brand transition-colors line-clamp-2">{{ s['nome'] }}</p>
+            <p class="text-xs text-emerald-400 mt-1">R$ {{ "%.2f"|format(s['preco_padrao'] / 100) }}</p>
+          </button>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- Modal de confirmação (inline) -->
+      <div id="confirm-panel" class="hidden bg-gray-800 border border-gray-700 rounded-2xl p-6">
+        <h3 class="text-base font-semibold text-white mb-1" id="confirm-servico-nome"></h3>
+        <p class="text-sm text-gray-400 mb-5">Confirme os detalhes do atendimento</p>
+
+        <div class="grid sm:grid-cols-2 gap-4 mb-5">
+          <div>
+            <label class="block text-xs font-medium text-gray-400 mb-1.5">Valor (R$)</label>
+            <input type="number" id="valor_display" step="0.01" min="0"
+                   class="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2.5 text-white text-sm focus:ring-2 focus:ring-brand focus:outline-none"
+                   oninput="document.getElementById('valor_input').value = this.value">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-gray-400 mb-1.5">Data</label>
+            <input type="date" name="data" value="{{ hoje }}"
+                   class="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2.5 text-white text-sm focus:ring-2 focus:ring-brand focus:outline-none">
+          </div>
+        </div>
+
+        <!-- Forma de pagamento -->
+        <div class="mb-5">
+          <label class="block text-xs font-medium text-gray-400 mb-2">Forma de pagamento</label>
+          <div class="flex gap-2">
+            {% for forma in ['PIX', 'DINHEIRO', 'MAQUININHA'] %}
+            <button type="button" onclick="selecionarForma('{{ forma }}')"
+                    id="forma-{{ forma }}"
+                    class="forma-btn flex-1 py-2 text-sm font-medium rounded-lg border border-gray-600 text-gray-400
+                           hover:border-brand hover:text-brand transition-colors">
+              {{ forma }}
+            </button>
+            {% endfor %}
+          </div>
+        </div>
+
+        <div class="mb-5">
+          <label class="block text-xs font-medium text-gray-400 mb-1.5">Observação (opcional)</label>
+          <input type="text" name="observacao"
+                 class="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2.5 text-white text-sm focus:ring-2 focus:ring-brand focus:outline-none"
+                 placeholder="ex: cliente novo">
+        </div>
+
+        <div class="flex gap-3">
+          <button type="button" onclick="cancelarServico()"
+                  class="flex-1 py-2.5 text-sm font-medium rounded-lg border border-gray-600 text-gray-400 hover:text-white hover:border-gray-500 transition-colors">
+            Cancelar
+          </button>
+          <button type="submit"
+                  class="flex-1 py-2.5 text-sm font-semibold rounded-lg bg-brand hover:bg-emerald-600 text-white transition-colors">
+            Registrar
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <!-- Aba Despesa -->
+  <div id="panel-despesa" class="hidden">
+    <div class="grid lg:grid-cols-2 gap-6">
+
+      <!-- Itens frequentes -->
+      <div>
+        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Itens frequentes</p>
+        <div class="grid grid-cols-2 gap-2">
+          {% for item in itens %}
+          <button type="button"
+                  onclick="preencherItem({{ item['categoria_id'] }}, '{{ item['descricao'] | e }}', {{ item['valor_sugerido'] or 0 }}, {{ item['id'] }})"
+                  class="bg-gray-800 hover:bg-gray-700 border border-gray-700 hover:border-brand/40 rounded-xl p-3 text-left transition-all">
+            <p class="text-xs font-medium text-white">{{ item['cat_icone'] }} {{ item['descricao'] }}</p>
+            {% if item['valor_sugerido'] %}
+            <p class="text-xs text-emerald-400 mt-0.5">R$ {{ "%.2f"|format(item['valor_sugerido'] / 100) }}</p>
+            {% endif %}
+          </button>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- Formulário de despesa -->
+      <div>
+        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Detalhes da despesa</p>
+        <form method="POST" action="{{ url_for('lancamento.registrar_despesa') }}" class="space-y-4">
+          <input type="hidden" name="item_frequente_id" id="item_id_input">
+
+          <div>
+            <label class="block text-xs font-medium text-gray-400 mb-1.5">Categoria</label>
+            <select name="categoria_id" id="categoria_select"
+                    class="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2.5 text-white text-sm focus:ring-2 focus:ring-brand focus:outline-none">
+              {% for cat in categorias %}
+              <option value="{{ cat['id'] }}">{{ cat['icone'] }} {{ cat['nome'] }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-medium text-gray-400 mb-1.5">Descrição</label>
+            <input type="text" name="descricao" id="descricao_input" required
+                   class="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2.5 text-white text-sm focus:ring-2 focus:ring-brand focus:outline-none"
+                   placeholder="ex: Lâmina Gillette">
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-medium text-gray-400 mb-1.5">Valor (R$)</label>
+              <input type="number" name="valor" id="valor_desp_input" step="0.01" min="0.01" required
+                     class="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2.5 text-white text-sm focus:ring-2 focus:ring-brand focus:outline-none">
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-gray-400 mb-1.5">Data</label>
+              <input type="date" name="data" value="{{ hoje }}"
+                     class="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2.5 text-white text-sm focus:ring-2 focus:ring-brand focus:outline-none">
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-medium text-gray-400 mb-2">Forma de pagamento</label>
+            <div class="flex gap-2">
+              {% for forma in ['PIX', 'DINHEIRO', 'MAQUININHA'] %}
+              <button type="button" onclick="selecionarFormaDespesa('{{ forma }}')"
+                      id="desp-forma-{{ forma }}"
+                      class="desp-forma-btn flex-1 py-2 text-sm font-medium rounded-lg border border-gray-600 text-gray-400
+                             hover:border-brand hover:text-brand transition-colors">
+                {{ forma }}
+              </button>
+              {% endfor %}
+            </div>
+            <input type="hidden" name="forma_pagamento" id="forma_desp_input" required>
+          </div>
+
+          <button type="submit"
+                  class="w-full py-2.5 text-sm font-semibold rounded-lg bg-brand hover:bg-emerald-600 text-white transition-colors">
+            Registrar despesa
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let servicoSelecionadoId = null;
+
+function showTab(tab) {
+  ['atendimento', 'despesa'].forEach(t => {
+    document.getElementById('panel-' + t).classList.toggle('hidden', t !== tab);
+    const btn = document.getElementById('tab-' + t);
+    btn.classList.toggle('text-white', t === tab);
+    btn.classList.toggle('bg-gray-700', t === tab);
+    btn.classList.toggle('text-gray-400', t !== tab);
+    btn.classList.remove('bg-gray-700');
+    if (t === tab) btn.classList.add('bg-gray-700', 'text-white');
+    else btn.classList.add('text-gray-400');
+  });
+}
+
+function selecionarServico(id, preco, nome) {
+  servicoSelecionadoId = id;
+  document.getElementById('servico_id_input').value = id;
+  document.getElementById('valor_display').value = (preco / 100).toFixed(2);
+  document.getElementById('valor_input').value = (preco / 100).toFixed(2);
+  document.getElementById('confirm-servico-nome').textContent = nome;
+
+  // Highlight
+  document.querySelectorAll('.servico-btn').forEach(b => {
+    b.classList.remove('border-brand', 'bg-gray-700');
+    b.classList.add('border-gray-700');
+  });
+  const btn = document.querySelector(`.servico-btn[data-id="${id}"]`);
+  if (btn) { btn.classList.add('border-brand', 'bg-gray-700'); btn.classList.remove('border-gray-700'); }
+
+  document.getElementById('confirm-panel').classList.remove('hidden');
+  document.getElementById('confirm-panel').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+  // Limpa forma
+  document.getElementById('forma_input').value = '';
+  document.querySelectorAll('.forma-btn').forEach(b => {
+    b.classList.remove('border-brand', 'text-brand', 'bg-brand/10');
+    b.classList.add('border-gray-600', 'text-gray-400');
+  });
+}
+
+function cancelarServico() {
+  document.getElementById('confirm-panel').classList.add('hidden');
+  document.querySelectorAll('.servico-btn').forEach(b => {
+    b.classList.remove('border-brand', 'bg-gray-700');
+    b.classList.add('border-gray-700');
+  });
+  servicoSelecionadoId = null;
+}
+
+function selecionarForma(forma) {
+  document.getElementById('forma_input').value = forma;
+  document.querySelectorAll('.forma-btn').forEach(b => {
+    b.classList.remove('border-brand', 'text-brand', 'bg-brand/10');
+    b.classList.add('border-gray-600', 'text-gray-400');
+  });
+  const btn = document.getElementById('forma-' + forma);
+  btn.classList.add('border-brand', 'text-brand', 'bg-brand/10');
+  btn.classList.remove('border-gray-600', 'text-gray-400');
+}
+
+function selecionarFormaDespesa(forma) {
+  document.getElementById('forma_desp_input').value = forma;
+  document.querySelectorAll('.desp-forma-btn').forEach(b => {
+    b.classList.remove('border-brand', 'text-brand', 'bg-brand/10');
+    b.classList.add('border-gray-600', 'text-gray-400');
+  });
+  const btn = document.getElementById('desp-forma-' + forma);
+  btn.classList.add('border-brand', 'text-brand', 'bg-brand/10');
+  btn.classList.remove('border-gray-600', 'text-gray-400');
+}
+
+function preencherItem(catId, descricao, valor, itemId) {
+  document.getElementById('categoria_select').value = catId;
+  document.getElementById('descricao_input').value = descricao;
+  document.getElementById('item_id_input').value = itemId;
+  if (valor > 0) document.getElementById('valor_desp_input').value = (valor / 100).toFixed(2);
+}
+
+// Valida forma antes de submeter atendimento
+document.getElementById('form-atendimento').addEventListener('submit', function(e) {
+  if (!document.getElementById('forma_input').value) {
+    e.preventDefault();
+    alert('Selecione a forma de pagamento.');
+  }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login — Flux Barber</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: { extend: { colors: { brand: { DEFAULT: '#10b981', dark: '#059669' } } } }
+    }
+  </script>
+</head>
+<body class="h-full bg-gray-900 flex items-center justify-center p-4">
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    <div class="fixed top-4 right-4 z-50 flex flex-col gap-2">
+      {% for category, message in messages %}
+        <div class="flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg text-sm font-medium
+          {% if category == 'error' %}bg-red-500/20 border border-red-500/40 text-red-300
+          {% else %}bg-emerald-500/20 border border-emerald-500/40 text-emerald-300{% endif %}">
+          {{ message }}
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}
+
+<div class="w-full max-w-sm">
+  <!-- Logo -->
+  <div class="text-center mb-8">
+    <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-brand mb-4">
+      <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+          d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/>
+      </svg>
+    </div>
+    <h1 class="text-2xl font-bold text-white">Flux Barber</h1>
+    <p class="text-gray-400 text-sm mt-1">Controle financeiro da sua barbearia</p>
+  </div>
+
+  <!-- Card -->
+  <div class="bg-gray-800 rounded-2xl border border-gray-700 p-8">
+    <h2 class="text-lg font-semibold text-white mb-6">Entrar na conta</h2>
+
+    <form method="POST" class="space-y-4">
+      <div>
+        <label for="email" class="block text-sm font-medium text-gray-300 mb-1.5">E-mail</label>
+        <input
+          type="email" id="email" name="email" required autocomplete="email"
+          class="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2.5 text-sm text-white
+                 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent transition"
+          placeholder="seu@email.com">
+      </div>
+
+      <div>
+        <label for="senha" class="block text-sm font-medium text-gray-300 mb-1.5">Senha</label>
+        <input
+          type="password" id="senha" name="senha" required autocomplete="current-password"
+          class="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2.5 text-sm text-white
+                 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent transition"
+          placeholder="••••••">
+      </div>
+
+      <div class="flex items-center">
+        <input type="checkbox" id="lembrar" name="lembrar"
+               class="w-4 h-4 rounded border-gray-600 bg-gray-900 text-brand focus:ring-brand">
+        <label for="lembrar" class="ml-2 text-sm text-gray-400">Lembrar de mim</label>
+      </div>
+
+      <button type="submit"
+              class="w-full bg-brand hover:bg-brand-dark text-white font-semibold rounded-lg py-2.5 text-sm
+                     transition-colors focus:outline-none focus:ring-2 focus:ring-brand focus:ring-offset-2 focus:ring-offset-gray-800 mt-2">
+        Entrar
+      </button>
+    </form>
+
+    <p class="text-center text-sm text-gray-500 mt-6">
+      Não tem conta?
+      <a href="{{ url_for('auth.register') }}" class="text-brand hover:text-brand-light font-medium transition-colors">
+        Criar conta grátis
+      </a>
+    </p>
+  </div>
+
+  <p class="text-center text-xs text-gray-600 mt-6">
+    Flux Barber • Plano Grátis sempre disponível
+  </p>
+</div>
+
+</body>
+</html>

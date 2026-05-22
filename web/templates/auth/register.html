@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Criar conta — Flux Barber</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: { extend: { colors: { brand: { DEFAULT: '#10b981', dark: '#059669' } } } }
+    }
+  </script>
+</head>
+<body class="h-full bg-gray-900 flex items-center justify-center p-4">
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    <div class="fixed top-4 right-4 z-50 flex flex-col gap-2">
+      {% for category, message in messages %}
+        <div class="flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg text-sm font-medium
+          {% if category == 'error' %}bg-red-500/20 border border-red-500/40 text-red-300
+          {% else %}bg-emerald-500/20 border border-emerald-500/40 text-emerald-300{% endif %}">
+          {{ message }}
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}
+
+<div class="w-full max-w-sm">
+  <!-- Logo -->
+  <div class="text-center mb-8">
+    <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-brand mb-4">
+      <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+          d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/>
+      </svg>
+    </div>
+    <h1 class="text-2xl font-bold text-white">Flux Barber</h1>
+    <p class="text-gray-400 text-sm mt-1">Comece grátis, cresça com Pro</p>
+  </div>
+
+  <!-- Card -->
+  <div class="bg-gray-800 rounded-2xl border border-gray-700 p-8">
+    <h2 class="text-lg font-semibold text-white mb-6">Criar conta grátis</h2>
+
+    <form method="POST" class="space-y-4">
+      <div>
+        <label for="nome" class="block text-sm font-medium text-gray-300 mb-1.5">Nome da barbearia</label>
+        <input
+          type="text" id="nome" name="nome" required autocomplete="organization"
+          class="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2.5 text-sm text-white
+                 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent transition"
+          placeholder="brodz">
+      </div>
+
+      <div>
+        <label for="email" class="block text-sm font-medium text-gray-300 mb-1.5">E-mail</label>
+        <input
+          type="email" id="email" name="email" required autocomplete="email"
+          class="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2.5 text-sm text-white
+                 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent transition"
+          placeholder="seu@email.com">
+      </div>
+
+      <div>
+        <label for="senha" class="block text-sm font-medium text-gray-300 mb-1.5">Senha</label>
+        <input
+          type="password" id="senha" name="senha" required autocomplete="new-password"
+          class="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2.5 text-sm text-white
+                 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent transition"
+          placeholder="mínimo 6 caracteres">
+      </div>
+
+      <div>
+        <label for="confirmar" class="block text-sm font-medium text-gray-300 mb-1.5">Confirmar senha</label>
+        <input
+          type="password" id="confirmar" name="confirmar" required autocomplete="new-password"
+          class="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2.5 text-sm text-white
+                 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent transition"
+          placeholder="••••••">
+      </div>
+
+      <!-- O que está incluso no grátis -->
+      <div class="bg-gray-900/60 rounded-lg p-3 border border-gray-700 text-xs text-gray-400 space-y-1">
+        <p class="text-gray-300 font-medium mb-1.5">Plano Grátis inclui:</p>
+        <div class="flex items-center gap-2"><span class="text-brand">✓</span> Lançamento de receitas e despesas</div>
+        <div class="flex items-center gap-2"><span class="text-brand">✓</span> Dashboard com KPIs do dia e mês</div>
+        <div class="flex items-center gap-2"><span class="text-brand">✓</span> Catálogo completo de serviços</div>
+        <div class="flex items-center gap-2"><span class="text-gray-600">○</span> Relatórios avançados e BI — Pro</div>
+      </div>
+
+      <button type="submit"
+              class="w-full bg-brand hover:bg-brand-dark text-white font-semibold rounded-lg py-2.5 text-sm
+                     transition-colors focus:outline-none focus:ring-2 focus:ring-brand focus:ring-offset-2 focus:ring-offset-gray-800 mt-2">
+        Criar conta grátis
+      </button>
+    </form>
+
+    <p class="text-center text-sm text-gray-500 mt-6">
+      Já tem conta?
+      <a href="{{ url_for('auth.login') }}" class="text-brand hover:text-green-400 font-medium transition-colors">
+        Entrar
+      </a>
+    </p>
+  </div>
+</div>
+
+</body>
+</html>
