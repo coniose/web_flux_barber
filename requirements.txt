@@ -8,6 +8,7 @@ openpyxl==3.1.5
 flask
 flask-login
 werkzeug
+gunicorn
 
 # CLI
 typer>=0.12
