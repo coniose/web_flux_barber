@@ -1,0 +1,531 @@
+{% extends "base.html" %}
+{% block title %}Configurações — Flux Barber{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto space-y-6">
+
+  <h1 class="text-xl font-bold text-white">Configurações</h1>
+
+  <!-- Tab nav -->
+  <div class="flex gap-1 bg-gray-800 rounded-xl p-1 border border-gray-700 overflow-x-auto">
+    {% for t, label in [('servicos','Serviços'),('categorias','Categorias'),('itens','Itens'),('produtos','Produtos'),('conta','Conta')] %}
+    <a href="{{ url_for('config.index', tab=t) }}"
+       class="px-4 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap
+              {{ 'text-white bg-gray-700' if tab == t else 'text-gray-400 hover:text-white' }}">
+      {{ label }}
+    </a>
+    {% endfor %}
+  </div>
+
+  {# ── Serviços ───────────────────────────────────────────────────────────── #}
+  {% if tab == 'servicos' %}
+  <div class="bg-gray-800 border border-gray-700 rounded-xl overflow-hidden">
+    <div class="flex items-center justify-between px-5 py-4 border-b border-gray-700">
+      <h3 class="text-sm font-semibold text-white">Serviços ({{ servicos|length }})</h3>
+      <button onclick="abrirNovoServico()"
+              class="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-brand hover:bg-emerald-600 text-white transition-colors">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+        Novo
+      </button>
+    </div>
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="text-xs text-gray-500 uppercase tracking-wider border-b border-gray-700">
+          <th class="px-4 py-3 text-left">Nome</th>
+          <th class="px-4 py-3 text-left hidden sm:table-cell">Categoria</th>
+          <th class="px-4 py-3 text-right">Preço</th>
+          <th class="px-4 py-3 text-center">Ord.</th>
+          <th class="px-4 py-3 text-center">Status</th>
+          <th class="px-4 py-3 text-center">Ações</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-700/50">
+        {% for s in servicos %}
+        <tr class="hover:bg-gray-700/30 transition-colors {% if not s['ativo'] %}opacity-50{% endif %}">
+          <td class="px-4 py-3 text-white font-medium">{{ s['nome'] }}</td>
+          <td class="px-4 py-3 text-gray-400 text-xs hidden sm:table-cell">{{ s['categoria_servico'] or '—' }}</td>
+          <td class="px-4 py-3 text-right text-emerald-400">R$ {{ "%.2f"|format(s['preco_padrao'] / 100) }}</td>
+          <td class="px-4 py-3 text-center text-gray-400 text-xs">{{ s['ordem'] }}</td>
+          <td class="px-4 py-3 text-center">
+            <span class="text-xs px-2 py-0.5 rounded-full
+              {{ 'bg-emerald-500/15 text-emerald-400' if s['ativo'] else 'bg-gray-500/15 text-gray-500' }}">
+              {{ 'Ativo' if s['ativo'] else 'Inativo' }}
+            </span>
+          </td>
+          <td class="px-4 py-3 text-center">
+            <div class="flex items-center justify-center gap-1.5">
+              <button onclick="editServico({{ s['id'] }}, '{{ s['nome']|e }}', {{ s['preco_padrao'] }}, '{{ (s['categoria_servico'] or '')|e }}', {{ s['ordem'] }})"
+                      class="text-xs px-2 py-1 rounded bg-gray-600/50 text-gray-300 hover:bg-gray-600 transition-colors">
+                Editar
+              </button>
+              <form method="POST" action="{{ url_for('config.servico_toggle', sid=s['id']) }}" class="inline">
+                <button type="submit" class="text-xs px-2 py-1 rounded transition-colors
+                  {{ 'bg-red-500/15 text-red-400 hover:bg-red-500/25' if s['ativo'] else 'bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25' }}">
+                  {{ 'Desativar' if s['ativo'] else 'Ativar' }}
+                </button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="6" class="px-4 py-8 text-center text-gray-500">Nenhum serviço cadastrado.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+
+  {# ── Categorias ─────────────────────────────────────────────────────────── #}
+  {% if tab == 'categorias' %}
+  <div class="bg-gray-800 border border-gray-700 rounded-xl overflow-hidden">
+    <div class="flex items-center justify-between px-5 py-4 border-b border-gray-700">
+      <h3 class="text-sm font-semibold text-white">Categorias de despesa ({{ categorias|length }})</h3>
+      <button onclick="abrirNovaCategoria()"
+              class="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-brand hover:bg-emerald-600 text-white transition-colors">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+        Nova
+      </button>
+    </div>
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="text-xs text-gray-500 uppercase tracking-wider border-b border-gray-700">
+          <th class="px-4 py-3 text-left">Ícone</th>
+          <th class="px-4 py-3 text-left">Nome</th>
+          <th class="px-4 py-3 text-center">Status</th>
+          <th class="px-4 py-3 text-center">Ações</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-700/50">
+        {% for c in categorias %}
+        <tr class="hover:bg-gray-700/30 transition-colors {% if not c['ativo'] %}opacity-50{% endif %}">
+          <td class="px-4 py-3 text-2xl leading-none">{{ c['icone'] or '📦' }}</td>
+          <td class="px-4 py-3 text-white font-medium">{{ c['nome'] }}</td>
+          <td class="px-4 py-3 text-center">
+            <span class="text-xs px-2 py-0.5 rounded-full
+              {{ 'bg-emerald-500/15 text-emerald-400' if c['ativo'] else 'bg-gray-500/15 text-gray-500' }}">
+              {{ 'Ativa' if c['ativo'] else 'Inativa' }}
+            </span>
+          </td>
+          <td class="px-4 py-3 text-center">
+            <div class="flex items-center justify-center gap-1.5">
+              <button onclick="editCategoria({{ c['id'] }}, '{{ c['nome']|e }}', '{{ (c['icone'] or '')|e }}')"
+                      class="text-xs px-2 py-1 rounded bg-gray-600/50 text-gray-300 hover:bg-gray-600 transition-colors">
+                Editar
+              </button>
+              <form method="POST" action="{{ url_for('config.categoria_toggle', cid=c['id']) }}" class="inline">
+                <button type="submit" class="text-xs px-2 py-1 rounded transition-colors
+                  {{ 'bg-red-500/15 text-red-400 hover:bg-red-500/25' if c['ativo'] else 'bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25' }}">
+                  {{ 'Desativar' if c['ativo'] else 'Ativar' }}
+                </button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="4" class="px-4 py-8 text-center text-gray-500">Nenhuma categoria cadastrada.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+
+  {# ── Itens frequentes ───────────────────────────────────────────────────── #}
+  {% if tab == 'itens' %}
+  <div class="bg-gray-800 border border-gray-700 rounded-xl overflow-hidden">
+    <div class="flex items-center justify-between px-5 py-4 border-b border-gray-700">
+      <h3 class="text-sm font-semibold text-white">Itens frequentes ({{ itens|length }})</h3>
+      <button onclick="abrirNovoItem()"
+              class="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-brand hover:bg-emerald-600 text-white transition-colors">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+        Novo
+      </button>
+    </div>
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="text-xs text-gray-500 uppercase tracking-wider border-b border-gray-700">
+          <th class="px-4 py-3 text-left">Descrição</th>
+          <th class="px-4 py-3 text-left hidden sm:table-cell">Categoria</th>
+          <th class="px-4 py-3 text-right hidden sm:table-cell">Valor sugerido</th>
+          <th class="px-4 py-3 text-center hidden sm:table-cell">Usos</th>
+          <th class="px-4 py-3 text-center">Status</th>
+          <th class="px-4 py-3 text-center">Ações</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-700/50">
+        {% for i in itens %}
+        <tr class="hover:bg-gray-700/30 transition-colors {% if not i['ativo'] %}opacity-50{% endif %}">
+          <td class="px-4 py-3 text-white">{{ i['descricao'] }}</td>
+          <td class="px-4 py-3 text-gray-400 text-xs hidden sm:table-cell">{{ i['categoria_nome'] }}</td>
+          <td class="px-4 py-3 text-right text-gray-400 text-xs hidden sm:table-cell">
+            {% if i['valor_sugerido'] %}R$ {{ "%.2f"|format(i['valor_sugerido'] / 100) }}{% else %}—{% endif %}
+          </td>
+          <td class="px-4 py-3 text-center text-gray-500 text-xs hidden sm:table-cell">{{ i['vezes_usado'] }}</td>
+          <td class="px-4 py-3 text-center">
+            <span class="text-xs px-2 py-0.5 rounded-full
+              {{ 'bg-emerald-500/15 text-emerald-400' if i['ativo'] else 'bg-gray-500/15 text-gray-500' }}">
+              {{ 'Ativo' if i['ativo'] else 'Inativo' }}
+            </span>
+          </td>
+          <td class="px-4 py-3 text-center">
+            <div class="flex items-center justify-center gap-1.5">
+              <button onclick="editItem({{ i['id'] }}, '{{ i['descricao']|e }}', {{ i['categoria_id'] }}, {{ i['valor_sugerido'] or 0 }})"
+                      class="text-xs px-2 py-1 rounded bg-gray-600/50 text-gray-300 hover:bg-gray-600 transition-colors">
+                Editar
+              </button>
+              <form method="POST" action="{{ url_for('config.item_toggle', iid=i['id']) }}" class="inline">
+                <button type="submit" class="text-xs px-2 py-1 rounded transition-colors
+                  {{ 'bg-red-500/15 text-red-400 hover:bg-red-500/25' if i['ativo'] else 'bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25' }}">
+                  {{ 'Desativar' if i['ativo'] else 'Ativar' }}
+                </button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="6" class="px-4 py-8 text-center text-gray-500">Nenhum item cadastrado.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+
+  {# ── Produtos ───────────────────────────────────────────────────────────── #}
+  {% if tab == 'produtos' %}
+  <div class="bg-gray-800 border border-gray-700 rounded-xl overflow-hidden">
+    <div class="px-5 py-4 border-b border-gray-700">
+      <h3 class="text-sm font-semibold text-white">Produtos ({{ produtos|length }})</h3>
+      <p class="text-xs text-gray-500 mt-0.5">
+        Para registrar novos produtos use a tela de
+        <a href="{{ url_for('estoque.index') }}" class="text-brand hover:text-emerald-400">Estoque</a>.
+      </p>
+    </div>
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="text-xs text-gray-500 uppercase tracking-wider border-b border-gray-700">
+          <th class="px-4 py-3 text-left">Nome</th>
+          <th class="px-4 py-3 text-right hidden sm:table-cell">Custo</th>
+          <th class="px-4 py-3 text-right">Venda</th>
+          <th class="px-4 py-3 text-center">Status</th>
+          <th class="px-4 py-3 text-center">Ações</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-700/50">
+        {% for p in produtos %}
+        <tr class="hover:bg-gray-700/30 transition-colors {% if not p['ativo'] %}opacity-50{% endif %}">
+          <td class="px-4 py-3">
+            <p class="text-white font-medium">{{ p['nome'] }}</p>
+            {% if p['descricao'] %}<p class="text-xs text-gray-500">{{ p['descricao'] }}</p>{% endif %}
+          </td>
+          <td class="px-4 py-3 text-right text-gray-400 text-xs hidden sm:table-cell">R$ {{ "%.2f"|format(p['preco_custo'] / 100) }}</td>
+          <td class="px-4 py-3 text-right text-emerald-400">R$ {{ "%.2f"|format(p['preco_venda'] / 100) }}</td>
+          <td class="px-4 py-3 text-center">
+            <span class="text-xs px-2 py-0.5 rounded-full
+              {{ 'bg-emerald-500/15 text-emerald-400' if p['ativo'] else 'bg-gray-500/15 text-gray-500' }}">
+              {{ 'Ativo' if p['ativo'] else 'Inativo' }}
+            </span>
+          </td>
+          <td class="px-4 py-3 text-center">
+            <div class="flex items-center justify-center gap-1.5">
+              <button onclick="editProduto({{ p['id'] }}, '{{ p['nome']|e }}', '{{ (p['descricao'] or '')|e }}', {{ p['preco_custo'] }}, {{ p['preco_venda'] }})"
+                      class="text-xs px-2 py-1 rounded bg-gray-600/50 text-gray-300 hover:bg-gray-600 transition-colors">
+                Editar
+              </button>
+              <form method="POST" action="{{ url_for('config.produto_toggle', pid=p['id']) }}" class="inline">
+                <button type="submit" class="text-xs px-2 py-1 rounded transition-colors
+                  {{ 'bg-red-500/15 text-red-400 hover:bg-red-500/25' if p['ativo'] else 'bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25' }}">
+                  {{ 'Desativar' if p['ativo'] else 'Ativar' }}
+                </button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="5" class="px-4 py-8 text-center text-gray-500">Nenhum produto cadastrado.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+
+  {# ── Conta ──────────────────────────────────────────────────────────────── #}
+  {% if tab == 'conta' %}
+  <div class="grid lg:grid-cols-2 gap-6">
+
+    <div class="bg-gray-800 border border-gray-700 rounded-xl p-6">
+      <h3 class="text-sm font-semibold text-white mb-5">Dados da conta</h3>
+      <form method="POST" action="{{ url_for('config.conta_update') }}" class="space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-gray-400 mb-1.5">Nome</label>
+          <input type="text" name="nome" value="{{ current_user.nome }}" required
+                 class="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2.5 text-white text-sm focus:ring-2 focus:ring-brand focus:outline-none">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-gray-400 mb-1.5">E-mail</label>
+          <input type="email" name="email" value="{{ current_user.email }}" required
+                 class="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2.5 text-white text-sm focus:ring-2 focus:ring-brand focus:outline-none">
+        </div>
+        <p class="text-xs text-gray-500">
+          Plano:
+          <span class="{{ 'text-brand font-semibold' if current_user.is_pro else 'text-gray-400' }}">
+            {{ 'Pro' if current_user.is_pro else 'Grátis' }}
+          </span>
+        </p>
+        <button type="submit"
+                class="w-full py-2.5 text-sm font-semibold rounded-lg bg-brand hover:bg-emerald-600 text-white transition-colors">
+          Salvar alterações
+        </button>
+      </form>
+    </div>
+
+    <div class="bg-gray-800 border border-gray-700 rounded-xl p-6">
+      <h3 class="text-sm font-semibold text-white mb-5">Alterar senha</h3>
+      <form method="POST" action="{{ url_for('config.conta_senha') }}" class="space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-gray-400 mb-1.5">Senha atual</label>
+          <input type="password" name="senha_atual" required autocomplete="current-password"
+                 class="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2.5 text-white text-sm focus:ring-2 focus:ring-brand focus:outline-none">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-gray-400 mb-1.5">Nova senha</label>
+          <input type="password" name="nova_senha" required autocomplete="new-password" minlength="6"
+                 class="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2.5 text-white text-sm focus:ring-2 focus:ring-brand focus:outline-none">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-gray-400 mb-1.5">Confirmar nova senha</label>
+          <input type="password" name="confirmar_senha" required autocomplete="new-password"
+                 class="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2.5 text-white text-sm focus:ring-2 focus:ring-brand focus:outline-none">
+        </div>
+        <button type="submit"
+                class="w-full py-2.5 text-sm font-semibold rounded-lg bg-gray-700 hover:bg-gray-600 text-white transition-colors">
+          Alterar senha
+        </button>
+      </form>
+    </div>
+
+  </div>
+  {% endif %}
+
+</div>
+
+{# ── Modais ─────────────────────────────────────────────────────────────────── #}
+
+<!-- Modal Serviço -->
+<div id="modal-servico" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60">
+  <div class="bg-gray-800 border border-gray-700 rounded-2xl p-6 w-full max-w-md">
+    <h3 class="text-base font-semibold text-white mb-5" id="srv-titulo">Novo Serviço</h3>
+    <form method="POST" id="form-servico" class="space-y-4">
+      <div>
+        <label class="block text-xs font-medium text-gray-400 mb-1.5">Nome</label>
+        <input type="text" name="nome" id="srv-nome" required
+               class="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2.5 text-white text-sm focus:ring-2 focus:ring-brand focus:outline-none">
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs font-medium text-gray-400 mb-1.5">Preço (R$)</label>
+          <input type="number" name="preco_padrao" id="srv-preco" step="0.01" min="0" required
+                 class="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2.5 text-white text-sm focus:ring-2 focus:ring-brand focus:outline-none">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-gray-400 mb-1.5">Ordem</label>
+          <input type="number" name="ordem" id="srv-ordem" min="0" value="999"
+                 class="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2.5 text-white text-sm focus:ring-2 focus:ring-brand focus:outline-none">
+        </div>
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-400 mb-1.5">Categoria (opcional)</label>
+        <input type="text" name="categoria_servico" id="srv-cat" placeholder="ex: Corte, Barba…"
+               class="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2.5 text-white text-sm focus:ring-2 focus:ring-brand focus:outline-none">
+      </div>
+      <div class="flex gap-3 pt-2">
+        <button type="button" onclick="closeModal('modal-servico')"
+                class="flex-1 py-2.5 text-sm font-medium rounded-lg border border-gray-600 text-gray-400 hover:text-white transition-colors">
+          Cancelar
+        </button>
+        <button type="submit"
+                class="flex-1 py-2.5 text-sm font-semibold rounded-lg bg-brand hover:bg-emerald-600 text-white transition-colors">
+          Salvar
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal Categoria -->
+<div id="modal-categoria" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60">
+  <div class="bg-gray-800 border border-gray-700 rounded-2xl p-6 w-full max-w-sm">
+    <h3 class="text-base font-semibold text-white mb-5" id="cat-titulo">Nova Categoria</h3>
+    <form method="POST" id="form-cat" class="space-y-4">
+      <div>
+        <label class="block text-xs font-medium text-gray-400 mb-1.5">Nome</label>
+        <input type="text" name="nome" id="cat-nome" required
+               class="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2.5 text-white text-sm focus:ring-2 focus:ring-brand focus:outline-none">
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-400 mb-1.5">Ícone (emoji)</label>
+        <input type="text" name="icone" id="cat-icone" placeholder="📦"
+               class="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2.5 text-white text-sm focus:ring-2 focus:ring-brand focus:outline-none">
+      </div>
+      <div class="flex gap-3 pt-2">
+        <button type="button" onclick="closeModal('modal-categoria')"
+                class="flex-1 py-2.5 text-sm font-medium rounded-lg border border-gray-600 text-gray-400 hover:text-white transition-colors">
+          Cancelar
+        </button>
+        <button type="submit"
+                class="flex-1 py-2.5 text-sm font-semibold rounded-lg bg-brand hover:bg-emerald-600 text-white transition-colors">
+          Salvar
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal Item -->
+<div id="modal-item" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60">
+  <div class="bg-gray-800 border border-gray-700 rounded-2xl p-6 w-full max-w-md">
+    <h3 class="text-base font-semibold text-white mb-5" id="item-titulo">Novo Item</h3>
+    <form method="POST" id="form-item" class="space-y-4">
+      <div>
+        <label class="block text-xs font-medium text-gray-400 mb-1.5">Descrição</label>
+        <input type="text" name="descricao" id="item-descricao" required
+               class="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2.5 text-white text-sm focus:ring-2 focus:ring-brand focus:outline-none">
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs font-medium text-gray-400 mb-1.5">Categoria</label>
+          <select name="categoria_id" id="item-cat"
+                  class="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2.5 text-white text-sm focus:ring-2 focus:ring-brand focus:outline-none">
+            {% for c in categorias %}
+            <option value="{{ c['id'] }}">{{ c['icone'] }} {{ c['nome'] }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-gray-400 mb-1.5">Valor sugerido (R$)</label>
+          <input type="number" name="valor_sugerido" id="item-valor" step="0.01" min="0"
+                 class="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2.5 text-white text-sm focus:ring-2 focus:ring-brand focus:outline-none">
+        </div>
+      </div>
+      <div class="flex gap-3 pt-2">
+        <button type="button" onclick="closeModal('modal-item')"
+                class="flex-1 py-2.5 text-sm font-medium rounded-lg border border-gray-600 text-gray-400 hover:text-white transition-colors">
+          Cancelar
+        </button>
+        <button type="submit"
+                class="flex-1 py-2.5 text-sm font-semibold rounded-lg bg-brand hover:bg-emerald-600 text-white transition-colors">
+          Salvar
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal Produto (apenas edição) -->
+<div id="modal-produto" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60">
+  <div class="bg-gray-800 border border-gray-700 rounded-2xl p-6 w-full max-w-md">
+    <h3 class="text-base font-semibold text-white mb-5">Editar Produto</h3>
+    <form method="POST" id="form-produto" class="space-y-4">
+      <div>
+        <label class="block text-xs font-medium text-gray-400 mb-1.5">Nome</label>
+        <input type="text" name="nome" id="prod-nome" required
+               class="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2.5 text-white text-sm focus:ring-2 focus:ring-brand focus:outline-none">
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-400 mb-1.5">Descrição (opcional)</label>
+        <input type="text" name="descricao" id="prod-desc"
+               class="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2.5 text-white text-sm focus:ring-2 focus:ring-brand focus:outline-none">
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs font-medium text-gray-400 mb-1.5">Custo (R$)</label>
+          <input type="number" name="preco_custo" id="prod-custo" step="0.01" min="0" required
+                 class="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2.5 text-white text-sm focus:ring-2 focus:ring-brand focus:outline-none">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-gray-400 mb-1.5">Venda (R$)</label>
+          <input type="number" name="preco_venda" id="prod-venda" step="0.01" min="0" required
+                 class="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2.5 text-white text-sm focus:ring-2 focus:ring-brand focus:outline-none">
+        </div>
+      </div>
+      <div class="flex gap-3 pt-2">
+        <button type="button" onclick="closeModal('modal-produto')"
+                class="flex-1 py-2.5 text-sm font-medium rounded-lg border border-gray-600 text-gray-400 hover:text-white transition-colors">
+          Cancelar
+        </button>
+        <button type="submit"
+                class="flex-1 py-2.5 text-sm font-semibold rounded-lg bg-brand hover:bg-emerald-600 text-white transition-colors">
+          Salvar
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
+function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+document.querySelectorAll('[id^="modal-"]').forEach(m => {
+  m.addEventListener('click', e => { if (e.target === m) closeModal(m.id); });
+});
+
+function abrirNovoServico() {
+  document.getElementById('srv-titulo').textContent = 'Novo Serviço';
+  document.getElementById('form-servico').action = '/config/servico/novo';
+  document.getElementById('form-servico').reset();
+  document.getElementById('srv-ordem').value = '999';
+  openModal('modal-servico');
+}
+
+function editServico(id, nome, preco, cat, ordem) {
+  document.getElementById('srv-titulo').textContent = 'Editar Serviço';
+  document.getElementById('form-servico').action = `/config/servico/${id}/edit`;
+  document.getElementById('srv-nome').value = nome;
+  document.getElementById('srv-preco').value = (preco / 100).toFixed(2);
+  document.getElementById('srv-cat').value = cat;
+  document.getElementById('srv-ordem').value = ordem;
+  openModal('modal-servico');
+}
+
+function abrirNovaCategoria() {
+  document.getElementById('cat-titulo').textContent = 'Nova Categoria';
+  document.getElementById('form-cat').action = '/config/categoria/nova';
+  document.getElementById('form-cat').reset();
+  openModal('modal-categoria');
+}
+
+function editCategoria(id, nome, icone) {
+  document.getElementById('cat-titulo').textContent = 'Editar Categoria';
+  document.getElementById('form-cat').action = `/config/categoria/${id}/edit`;
+  document.getElementById('cat-nome').value = nome;
+  document.getElementById('cat-icone').value = icone;
+  openModal('modal-categoria');
+}
+
+function abrirNovoItem() {
+  document.getElementById('item-titulo').textContent = 'Novo Item';
+  document.getElementById('form-item').action = '/config/item/novo';
+  document.getElementById('form-item').reset();
+  openModal('modal-item');
+}
+
+function editItem(id, descricao, catId, valor) {
+  document.getElementById('item-titulo').textContent = 'Editar Item';
+  document.getElementById('form-item').action = `/config/item/${id}/edit`;
+  document.getElementById('item-descricao').value = descricao;
+  document.getElementById('item-cat').value = catId;
+  document.getElementById('item-valor').value = valor > 0 ? (valor / 100).toFixed(2) : '';
+  openModal('modal-item');
+}
+
+function editProduto(id, nome, desc, custo, venda) {
+  document.getElementById('form-produto').action = `/config/produto/${id}/edit`;
+  document.getElementById('prod-nome').value = nome;
+  document.getElementById('prod-desc').value = desc;
+  document.getElementById('prod-custo').value = (custo / 100).toFixed(2);
+  document.getElementById('prod-venda').value = (venda / 100).toFixed(2);
+  openModal('modal-produto');
+}
+</script>
+{% endblock %}
