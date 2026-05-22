@@ -70,6 +70,36 @@
     </div>
   </div>
 
+  <!-- KPIs Estoque -->
+  <div>
+    <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Estoque (mês)</p>
+    <div class="grid grid-cols-2 lg:grid-cols-3 gap-4">
+      <div class="bg-gray-800 border border-gray-700 rounded-xl p-4">
+        <div class="flex items-center gap-2 mb-2">
+          <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10"/></svg>
+          <p class="text-xs text-gray-400">Vendas produtos (hoje)</p>
+        </div>
+        <p class="text-xl font-bold text-white">R$ {{ "%.2f"|format(est_vendas_hoje / 100) }}</p>
+      </div>
+      <div class="bg-gray-800 border border-gray-700 rounded-xl p-4">
+        <div class="flex items-center gap-2 mb-2">
+          <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10"/></svg>
+          <p class="text-xs text-gray-400">Vendas produtos (mês)</p>
+        </div>
+        <p class="text-xl font-bold text-white">R$ {{ "%.2f"|format(est_vendas_mes / 100) }}</p>
+      </div>
+      <div class="bg-gray-800 border border-gray-700 rounded-xl p-4">
+        <div class="flex items-center gap-2 mb-2">
+          <svg class="w-4 h-4 {{ 'text-emerald-400' if est_margem_mes >= 0 else 'text-red-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+          <p class="text-xs text-gray-400">Margem bruta estoque</p>
+        </div>
+        <p class="text-xl font-bold {{ 'text-emerald-400' if est_margem_mes >= 0 else 'text-red-400' }}">
+          R$ {{ "%.2f"|format(est_margem_mes / 100) }}
+        </p>
+      </div>
+    </div>
+  </div>
+
   <!-- Gráfico + Ranking -->
   <div class="grid lg:grid-cols-3 gap-4">
 

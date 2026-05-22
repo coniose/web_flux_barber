@@ -8,7 +8,7 @@ from flask import Blueprint, render_template
 from flask_login import login_required
 
 from app.repositories.db import get_connection
-from app.repositories import receita_repo, despesa_repo
+from app.repositories import receita_repo, despesa_repo, movimentacao_repo
 
 dashboard_bp = Blueprint("dashboard", __name__)
 
@@ -30,6 +30,9 @@ def index():
     serie_desp = despesa_repo.serie_diaria(conn, inicio_mes, hoje)
     ranking = receita_repo.ranking_servicos(conn, inicio_mes, hoje, limite=5)
     mix = receita_repo.mix_forma_pagamento(conn, hoje, hoje)
+
+    est_hoje = movimentacao_repo.totais_periodo(conn, hoje, hoje)
+    est_mes = movimentacao_repo.totais_periodo(conn, inicio_mes, hoje)
 
     conn.close()
 
@@ -62,6 +65,10 @@ def index():
         # Ranking e mix
         ranking=ranking,
         mix=mix,
+        # Estoque
+        est_vendas_hoje=est_hoje["VENDA"]["total"],
+        est_vendas_mes=est_mes["VENDA"]["total"],
+        est_margem_mes=est_mes["VENDA"]["total"] - est_mes["COMPRA"]["total"],
     )
 
 

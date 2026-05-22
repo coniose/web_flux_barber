@@ -8,7 +8,7 @@ from flask import Blueprint, flash, jsonify, redirect, render_template, request,
 from flask_login import login_required
 
 from app.repositories.db import get_connection
-from app.repositories import servico_repo, categoria_repo, item_frequente_repo
+from app.repositories import servico_repo, categoria_repo, item_frequente_repo, produto_repo
 from app.services import receita_service, despesa_service
 from app.utils.validators import ValidacaoError
 
@@ -32,12 +32,14 @@ def index():
             WHERE i.ativo = 1
             ORDER BY i.vezes_usado DESC, i.descricao"""
     ).fetchall()
+    produtos = produto_repo.listar_ativos(conn)
     conn.close()
     return render_template(
         "lancamento.html",
         servicos=servicos,
         categorias=categorias,
         itens=itens,
+        produtos=produtos,
         hoje=date.today().isoformat(),
     )
 
