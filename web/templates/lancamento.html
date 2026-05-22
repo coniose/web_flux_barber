@@ -18,6 +18,10 @@
             class="tab-btn px-5 py-2 text-sm font-medium rounded-lg transition-colors text-gray-400 hover:text-white">
       Despesa
     </button>
+    <button onclick="showTab('produto')" id="tab-produto"
+            class="tab-btn px-5 py-2 text-sm font-medium rounded-lg transition-colors text-gray-400 hover:text-white">
+      Produto
+    </button>
   </div>
 
   <!-- Aba Atendimento -->
@@ -96,6 +100,75 @@
           </button>
         </div>
       </div>
+    </form>
+  </div>
+
+  <!-- Aba Produto -->
+  <div id="panel-produto" class="hidden">
+    <form method="POST" action="{{ url_for('estoque.registrar_venda') }}" id="form-produto">
+      <input type="hidden" name="produto_id" id="prod-id-input">
+      <input type="hidden" name="preco_venda" id="prod-preco-input">
+
+      {% if produtos %}
+      <div class="mb-6">
+        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Selecione o produto</p>
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+          {% for p in produtos %}
+          <button type="button"
+                  onclick="selecionarProduto({{ p['id'] }}, {{ p['preco_venda'] }}, '{{ p['nome'] | e }}', {{ p['quantidade_estoque'] }})"
+                  data-pid="{{ p['id'] }}"
+                  class="produto-btn bg-gray-800 hover:bg-gray-700 border border-gray-700 hover:border-brand/50
+                         rounded-xl p-3 text-left transition-all group
+                         {% if p['quantidade_estoque'] == 0 %}opacity-40 cursor-not-allowed{% endif %}"
+                  {% if p['quantidade_estoque'] == 0 %}disabled{% endif %}>
+            <p class="text-sm font-medium text-white group-hover:text-brand transition-colors line-clamp-2">{{ p['nome'] }}</p>
+            <p class="text-xs text-emerald-400 mt-1">R$ {{ "%.2f"|format(p['preco_venda'] / 100) }}</p>
+            <p class="text-xs text-gray-500 mt-0.5">{{ p['quantidade_estoque'] }} em estoque</p>
+          </button>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div id="confirm-produto" class="hidden bg-gray-800 border border-gray-700 rounded-2xl p-6">
+        <h3 class="text-base font-semibold text-white mb-1" id="confirm-prod-nome"></h3>
+        <p class="text-sm text-gray-400 mb-5">Confirme os detalhes da venda</p>
+        <div class="grid sm:grid-cols-3 gap-4 mb-5">
+          <div>
+            <label class="block text-xs font-medium text-gray-400 mb-1.5">Quantidade</label>
+            <input type="number" id="prod-qtd-display" name="quantidade" min="1" value="1" required
+                   class="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2.5 text-white text-sm focus:ring-2 focus:ring-brand focus:outline-none">
+            <p class="text-xs text-gray-500 mt-1">Disponível: <span id="prod-estoque-disp"></span></p>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-gray-400 mb-1.5">Preço unit. (R$)</label>
+            <input type="number" id="prod-preco-display" step="0.01" min="0.01" required
+                   class="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2.5 text-white text-sm focus:ring-2 focus:ring-brand focus:outline-none"
+                   oninput="document.getElementById('prod-preco-input').value = this.value">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-gray-400 mb-1.5">Data</label>
+            <input type="date" name="data" value="{{ hoje }}"
+                   class="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2.5 text-white text-sm focus:ring-2 focus:ring-brand focus:outline-none">
+          </div>
+        </div>
+        <div class="flex gap-3">
+          <button type="button" onclick="cancelarProduto()"
+                  class="flex-1 py-2.5 text-sm font-medium rounded-lg border border-gray-600 text-gray-400 hover:text-white hover:border-gray-500 transition-colors">
+            Cancelar
+          </button>
+          <button type="submit"
+                  class="flex-1 py-2.5 text-sm font-semibold rounded-lg bg-brand hover:bg-emerald-600 text-white transition-colors">
+            Registrar venda
+          </button>
+        </div>
+      </div>
+      {% else %}
+      <div class="py-16 text-center text-gray-500">
+        <svg class="w-12 h-12 mx-auto mb-3 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10"/></svg>
+        <p class="mb-3">Nenhum produto ativo no estoque.</p>
+        <a href="{{ url_for('estoque.index') }}" class="text-brand hover:text-emerald-400 text-sm font-medium">Ir para Estoque</a>
+      </div>
+      {% endif %}
     </form>
   </div>
 
@@ -188,15 +261,40 @@
 let servicoSelecionadoId = null;
 
 function showTab(tab) {
-  ['atendimento', 'despesa'].forEach(t => {
+  ['atendimento', 'despesa', 'produto'].forEach(t => {
     document.getElementById('panel-' + t).classList.toggle('hidden', t !== tab);
     const btn = document.getElementById('tab-' + t);
-    btn.classList.toggle('text-white', t === tab);
-    btn.classList.toggle('bg-gray-700', t === tab);
-    btn.classList.toggle('text-gray-400', t !== tab);
-    btn.classList.remove('bg-gray-700');
+    btn.classList.remove('bg-gray-700', 'text-white', 'text-gray-400');
     if (t === tab) btn.classList.add('bg-gray-700', 'text-white');
     else btn.classList.add('text-gray-400');
+  });
+}
+
+function selecionarProduto(id, preco, nome, estoque) {
+  document.getElementById('prod-id-input').value = id;
+  document.getElementById('prod-preco-input').value = (preco / 100).toFixed(2);
+  document.getElementById('prod-preco-display').value = (preco / 100).toFixed(2);
+  document.getElementById('prod-qtd-display').value = 1;
+  document.getElementById('prod-qtd-display').max = estoque;
+  document.getElementById('prod-estoque-disp').textContent = estoque;
+  document.getElementById('confirm-prod-nome').textContent = nome;
+
+  document.querySelectorAll('.produto-btn').forEach(b => {
+    b.classList.remove('border-brand', 'bg-gray-700');
+    b.classList.add('border-gray-700');
+  });
+  const btn = document.querySelector(`.produto-btn[data-pid="${id}"]`);
+  if (btn) { btn.classList.add('border-brand', 'bg-gray-700'); btn.classList.remove('border-gray-700'); }
+
+  document.getElementById('confirm-produto').classList.remove('hidden');
+  document.getElementById('confirm-produto').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function cancelarProduto() {
+  document.getElementById('confirm-produto').classList.add('hidden');
+  document.querySelectorAll('.produto-btn').forEach(b => {
+    b.classList.remove('border-brand', 'bg-gray-700');
+    b.classList.add('border-gray-700');
   });
 }
 

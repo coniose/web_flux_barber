@@ -153,3 +153,32 @@ CREATE TABLE IF NOT EXISTS config (
     chave TEXT PRIMARY KEY,
     valor TEXT NOT NULL
 );
+
+-- ------------------------------------------------------------- 3.12 PRODUTO --
+CREATE TABLE IF NOT EXISTS produto (
+    id                INTEGER PRIMARY KEY AUTOINCREMENT,
+    nome              TEXT    NOT NULL UNIQUE,
+    descricao         TEXT,
+    preco_custo       INTEGER NOT NULL CHECK (preco_custo >= 0),   -- centavos
+    preco_venda       INTEGER NOT NULL CHECK (preco_venda >= 0),   -- centavos
+    quantidade_estoque INTEGER NOT NULL DEFAULT 0,
+    ativo             INTEGER NOT NULL DEFAULT 1 CHECK (ativo IN (0, 1)),
+    criado_em         TEXT    NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_produto_ativo ON produto(ativo);
+
+-- ------------------------------------------------------- 3.13 MOVIMENTAÇÃO --
+CREATE TABLE IF NOT EXISTS movimentacao_estoque (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    produto_id      INTEGER NOT NULL REFERENCES produto(id),
+    tipo            TEXT    NOT NULL CHECK (tipo IN ('COMPRA', 'VENDA', 'AJUSTE')),
+    quantidade      INTEGER NOT NULL CHECK (quantidade != 0),
+    preco_unitario  INTEGER NOT NULL CHECK (preco_unitario >= 0),  -- centavos
+    total_centavos  INTEGER NOT NULL,
+    data            TEXT    NOT NULL,                              -- YYYY-MM-DD
+    observacao      TEXT,
+    criado_em       TEXT    NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_mov_produto   ON movimentacao_estoque(produto_id);
+CREATE INDEX IF NOT EXISTS idx_mov_data      ON movimentacao_estoque(data);
+CREATE INDEX IF NOT EXISTS idx_mov_tipo      ON movimentacao_estoque(tipo);

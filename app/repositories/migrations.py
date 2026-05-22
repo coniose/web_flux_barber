@@ -31,6 +31,7 @@ def apply_migrations(conn: sqlite3.Connection) -> None:
     _migrar_receita_uuid_updated_at(conn)
     _migrar_despesa_uuid_updated_at(conn)
     _criar_tabela_sync_state(conn)
+    _criar_tabelas_estoque(conn)
 
 
 # ---------------------------------------------------------------------------
@@ -98,6 +99,43 @@ def _criar_tabela_sync_state(conn: sqlite3.Connection) -> None:
              PRIMARY KEY (tabela, chave)
            )"""
     )
+
+
+# ---------------------------------------------------------------------------
+# Estoque — produto + movimentacao_estoque
+# ---------------------------------------------------------------------------
+
+
+def _criar_tabelas_estoque(conn: sqlite3.Connection) -> None:
+    """Cria as tabelas de estoque se ainda não existirem (idempotente via IF NOT EXISTS)."""
+    conn.executescript("""
+        CREATE TABLE IF NOT EXISTS produto (
+            id                INTEGER PRIMARY KEY AUTOINCREMENT,
+            nome              TEXT    NOT NULL UNIQUE,
+            descricao         TEXT,
+            preco_custo       INTEGER NOT NULL CHECK (preco_custo >= 0),
+            preco_venda       INTEGER NOT NULL CHECK (preco_venda >= 0),
+            quantidade_estoque INTEGER NOT NULL DEFAULT 0,
+            ativo             INTEGER NOT NULL DEFAULT 1 CHECK (ativo IN (0, 1)),
+            criado_em         TEXT    NOT NULL DEFAULT (datetime('now'))
+        );
+        CREATE INDEX IF NOT EXISTS idx_produto_ativo ON produto(ativo);
+
+        CREATE TABLE IF NOT EXISTS movimentacao_estoque (
+            id              INTEGER PRIMARY KEY AUTOINCREMENT,
+            produto_id      INTEGER NOT NULL REFERENCES produto(id),
+            tipo            TEXT    NOT NULL CHECK (tipo IN ('COMPRA', 'VENDA', 'AJUSTE')),
+            quantidade      INTEGER NOT NULL CHECK (quantidade != 0),
+            preco_unitario  INTEGER NOT NULL CHECK (preco_unitario >= 0),
+            total_centavos  INTEGER NOT NULL,
+            data            TEXT    NOT NULL,
+            observacao      TEXT,
+            criado_em       TEXT    NOT NULL DEFAULT (datetime('now'))
+        );
+        CREATE INDEX IF NOT EXISTS idx_mov_produto ON movimentacao_estoque(produto_id);
+        CREATE INDEX IF NOT EXISTS idx_mov_data    ON movimentacao_estoque(data);
+        CREATE INDEX IF NOT EXISTS idx_mov_tipo    ON movimentacao_estoque(tipo);
+    """)
 
 
 # ---------------------------------------------------------------------------

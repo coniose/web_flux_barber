@@ -43,12 +43,14 @@ def create_app(test_config: dict | None = None) -> Flask:
     from web.routes.lancamento import lancamento_bp
     from web.routes.receitas import receitas_bp
     from web.routes.despesas import despesas_bp
+    from web.routes.estoque import estoque_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(dashboard_bp)
     app.register_blueprint(lancamento_bp)
     app.register_blueprint(receitas_bp)
     app.register_blueprint(despesas_bp)
+    app.register_blueprint(estoque_bp)
 
     return app
 
