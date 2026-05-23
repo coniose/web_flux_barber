@@ -18,6 +18,7 @@ def create_app(test_config: dict | None = None) -> Flask:
     app.config["STRIPE_SECRET_KEY"] = os.environ.get("STRIPE_SECRET_KEY", "")
     app.config["STRIPE_PUBLISHABLE_KEY"] = os.environ.get("STRIPE_PUBLISHABLE_KEY", "")
     app.config["STRIPE_WEBHOOK_SECRET"] = os.environ.get("STRIPE_WEBHOOK_SECRET", "")
+    app.config["STRIPE_PRICE_ID"] = os.environ.get("STRIPE_PRICE_ID", "")
 
     if test_config:
         app.config.update(test_config)
@@ -39,6 +40,7 @@ def create_app(test_config: dict | None = None) -> Flask:
         return User.get_by_id(int(user_id))
 
     from web.auth.routes import auth_bp
+    from web.routes.billing import billing_bp
     from web.routes.chat import chat_bp
     from web.routes.dashboard import dashboard_bp
     from web.routes.despesas import despesas_bp
@@ -48,6 +50,7 @@ def create_app(test_config: dict | None = None) -> Flask:
     from web.routes.config import config_bp
 
     app.register_blueprint(auth_bp)
+    app.register_blueprint(billing_bp)
     app.register_blueprint(chat_bp)
     app.register_blueprint(dashboard_bp)
     app.register_blueprint(lancamento_bp)

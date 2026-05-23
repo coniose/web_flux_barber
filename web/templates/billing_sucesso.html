@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Plano Pro ativado — Flux Barber{% endblock %}
+
+{% block content %}
+<div class="max-w-md mx-auto py-16 text-center">
+
+  <div class="w-16 h-16 rounded-full bg-brand/20 border border-brand/40 flex items-center justify-center mx-auto mb-6">
+    <svg class="w-8 h-8 text-brand" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+    </svg>
+  </div>
+
+  <h1 class="text-2xl font-bold text-white mb-3">Plano Pro ativado!</h1>
+  <p class="text-gray-400 text-sm leading-relaxed mb-8">
+    Seu pagamento foi confirmado. O assistente IA já está disponível para você.
+    Experimente falar: <span class="text-brand">"Fiz um corte, 35 no pix"</span>
+  </p>
+
+  <div class="flex flex-col gap-3">
+    <a href="{{ url_for('chat.index') }}"
+       class="bg-brand hover:bg-brand-dark text-white font-semibold py-3 px-6 rounded-xl transition-colors text-sm">
+      Abrir assistente IA
+    </a>
+    <a href="{{ url_for('dashboard.index') }}"
+       class="text-gray-400 hover:text-white text-sm transition-colors py-2">
+      Ir para o dashboard
+    </a>
+  </div>
+
+  <div class="mt-10 border-t border-gray-700 pt-6">
+    <p class="text-xs text-gray-500 mb-3">Gerenciar assinatura</p>
+    <form action="{{ url_for('billing.portal') }}" method="POST">
+      <button type="submit" class="text-xs text-gray-500 hover:text-gray-300 underline transition-colors">
+        Cancelar ou alterar plano via Stripe
+      </button>
+    </form>
+  </div>
+
+</div>
+{% endblock %}

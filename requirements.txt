@@ -12,6 +12,7 @@ gunicorn
 python-dotenv
 anthropic
 firebase-admin
+stripe
 
 # CLI
 typer>=0.12
