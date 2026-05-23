@@ -76,8 +76,14 @@ def _ensure_usuario_table(conn) -> None:
         );
         CREATE INDEX IF NOT EXISTS idx_usuario_email ON usuario(email);
     """)
-    # Migração: adiciona device_id em bancos existentes que não têm a coluna
-    try:
-        conn.execute("ALTER TABLE usuario ADD COLUMN device_id TEXT")
-    except Exception:
-        pass  # coluna já existe
+    # Migrações incrementais para bancos existentes
+    for migration in [
+        "ALTER TABLE usuario ADD COLUMN device_id TEXT",
+        "ALTER TABLE usuario ADD COLUMN plano TEXT NOT NULL DEFAULT 'free'",
+        "ALTER TABLE usuario ADD COLUMN stripe_customer_id TEXT",
+        "ALTER TABLE usuario ADD COLUMN stripe_subscription_id TEXT",
+    ]:
+        try:
+            conn.execute(migration)
+        except Exception:
+            pass  # coluna já existe

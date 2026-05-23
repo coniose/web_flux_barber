@@ -7,8 +7,8 @@ import os
 from datetime import date, timedelta
 
 import anthropic
-from flask import Blueprint, jsonify, render_template, request
-from flask_login import login_required
+from flask import Blueprint, abort, flash, jsonify, redirect, render_template, request, url_for
+from flask_login import current_user, login_required
 
 from app.repositories.fs import categoria_repo, produto_repo, servico_repo
 from app.services import despesa_service, estoque_service, receita_service
@@ -311,12 +311,17 @@ def _run_agentic_loop(messages: list[dict]) -> str:
 @chat_bp.route("/chat")
 @login_required
 def index():
+    if not current_user.is_pro:
+        flash("O assistente de IA é exclusivo do plano Pro.", "info")
+        return redirect(url_for("lancamento.index"))
     return render_template("chat.html")
 
 
 @chat_bp.route("/api/chat", methods=["POST"])
 @login_required
 def api_chat():
+    if not current_user.is_pro:
+        return jsonify({"error": "Recurso exclusivo do plano Pro."}), 403
     payload = request.get_json(silent=True) or {}
     user_message = (payload.get("message") or "").strip()
     history = payload.get("history") or []
