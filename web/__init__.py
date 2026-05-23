@@ -32,6 +32,7 @@ def create_app(test_config: dict | None = None) -> Flask:
     # Garante DB SQLite inicializado (só para autenticação)
     conn = ensure_db()
     _ensure_usuario_table(conn)
+    _seed_demo_user(conn)
     conn.close()
 
     login_manager.init_app(app)
@@ -66,6 +67,27 @@ def create_app(test_config: dict | None = None) -> Flask:
     app.register_blueprint(config_bp)
 
     return app
+
+
+def _seed_demo_user(conn) -> None:
+    """Garante que a conta de demonstração existe com plano Pro."""
+    import uuid as _uuid
+    from werkzeug.security import generate_password_hash
+
+    DEMO_EMAIL = "dev@email.com"
+    DEMO_NOME = "Demo Dev"
+    DEMO_SENHA = "90901010"
+
+    row = conn.execute("SELECT id, plano FROM usuario WHERE email = ?", (DEMO_EMAIL,)).fetchone()
+    if row:
+        if row["plano"] != "pro":
+            conn.execute("UPDATE usuario SET plano = 'pro' WHERE email = ?", (DEMO_EMAIL,))
+        return
+
+    conn.execute(
+        "INSERT INTO usuario (email, nome, senha_hash, device_id, plano) VALUES (?, ?, ?, ?, ?)",
+        (DEMO_EMAIL, DEMO_NOME, generate_password_hash(DEMO_SENHA), _uuid.uuid4().hex, "pro"),
+    )
 
 
 def _ensure_usuario_table(conn) -> None:

@@ -25,6 +25,38 @@ def _get_usuario(conn, user_id: int):
 
 
 @cli.command()
+def criar(
+    email: str = typer.Option(..., prompt=True, help="E-mail do novo usuário"),
+    nome: str = typer.Option(..., prompt=True, help="Nome do usuário"),
+    senha: str = typer.Option(..., prompt=True, hide_input=True, help="Senha"),
+    pro: bool = typer.Option(False, "--pro/--free", help="Criar já com plano Pro"),
+):
+    """Cria um novo usuário diretamente no banco de autenticação."""
+    import uuid as _uuid
+    from werkzeug.security import generate_password_hash
+
+    email = email.lower().strip()
+    conn = get_connection()
+    existing = conn.execute("SELECT id, plano FROM usuario WHERE email = ?", (email,)).fetchone()
+    if existing:
+        rprint(f"[yellow]Usuário {email} já existe (id={existing['id']}, plano={existing['plano']}).[/yellow]")
+        if pro and existing["plano"] != "pro":
+            conn.execute("UPDATE usuario SET plano = 'pro' WHERE email = ?", (email,))
+            rprint(f"[bold green]Plano Pro ativado para {email}.[/bold green]")
+        conn.close()
+        return
+
+    device_id = _uuid.uuid4().hex
+    plano = "pro" if pro else "free"
+    conn.execute(
+        "INSERT INTO usuario (email, nome, senha_hash, device_id, plano) VALUES (?, ?, ?, ?, ?)",
+        (email, nome.strip(), generate_password_hash(senha), device_id, plano),
+    )
+    conn.close()
+    rprint(f"[bold green]Usuário criado: {nome} ({email}) — plano {plano.upper()}[/bold green]")
+
+
+@cli.command()
 def listar():
     """Lista todos os usuários cadastrados."""
     conn = get_connection()

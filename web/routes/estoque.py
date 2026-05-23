@@ -114,6 +114,48 @@ def ajustar():
     return redirect(url_for("estoque.index"))
 
 
+@estoque_bp.route("/estoque/editar", methods=["POST"])
+@login_required
+def editar_produto():
+    conn = get_user_conn()
+    try:
+        produto_id = int(request.form["produto_id"])
+        nome = request.form["nome"].strip()
+        custo_str = request.form["preco_custo"].replace(",", ".")
+        venda_str = request.form["preco_venda"].replace(",", ".")
+        descricao = request.form.get("descricao", "").strip() or None
+        produto_repo.atualizar(
+            conn,
+            produto_id,
+            nome=nome,
+            preco_custo=round(float(custo_str) * 100),
+            preco_venda=round(float(venda_str) * 100),
+            descricao=descricao,
+        )
+        flash("Produto atualizado.", "success")
+    except (ValidacaoError, ValueError, KeyError) as e:
+        flash(str(e), "error")
+    return redirect(url_for("estoque.index"))
+
+
+@estoque_bp.route("/estoque/desativar", methods=["POST"])
+@login_required
+def desativar_produto():
+    conn = get_user_conn()
+    try:
+        produto_id = int(request.form["produto_id"])
+        produto = produto_repo.obter(conn, produto_id)
+        if produto and produto["quantidade_estoque"] > 0:
+            estoque_service.ajustar_estoque(
+                conn, produto_id=produto_id, nova_quantidade=0, observacao="Produto desativado"
+            )
+        produto_repo.atualizar(conn, produto_id, ativo=0)
+        flash("Produto desativado. Histórico de movimentações preservado.", "success")
+    except (ValidacaoError, ValueError, KeyError) as e:
+        flash(str(e), "error")
+    return redirect(url_for("estoque.index"))
+
+
 @estoque_bp.route("/api/produto/<int:produto_id>")
 @login_required
 def api_produto(produto_id: int):
