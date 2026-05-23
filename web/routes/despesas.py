@@ -7,10 +7,9 @@ from datetime import date
 from flask import Blueprint, flash, redirect, render_template, request, url_for
 from flask_login import login_required
 
-from app.repositories.db import get_connection
-from app.repositories import despesa_repo
+from app.repositories.fs import despesa_repo
 from app.services import despesa_service
-from app.utils.validators import ValidacaoError
+from web.models import get_store
 
 despesas_bp = Blueprint("despesas", __name__)
 
@@ -24,11 +23,10 @@ def index():
     de = date.fromisoformat(de_str)
     ate = date.fromisoformat(ate_str)
 
-    conn = get_connection()
-    despesas = despesa_repo.listar_periodo(conn, de, ate)
-    total, qtd = despesa_repo.total_periodo(conn, de, ate)
-    por_categoria = despesa_repo.total_por_categoria(conn, de, ate)
-    conn.close()
+    store = get_store()
+    despesas = despesa_repo.listar_periodo(store, de, ate)
+    total, qtd = despesa_repo.total_periodo(store, de, ate)
+    por_categoria = despesa_repo.total_por_categoria(store, de, ate)
 
     return render_template(
         "despesas.html",
@@ -44,8 +42,7 @@ def index():
 @despesas_bp.route("/despesas/<int:despesa_id>/excluir", methods=["POST"])
 @login_required
 def excluir(despesa_id: int):
-    conn = get_connection()
-    despesa_service.excluir_despesa(conn, despesa_id)
-    conn.close()
+    store = get_store()
+    despesa_service.excluir_despesa(store, despesa_id)
     flash("Despesa excluída.", "success")
     return redirect(request.referrer or url_for("despesas.index"))

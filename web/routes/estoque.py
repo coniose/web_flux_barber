@@ -7,10 +7,10 @@ from datetime import date
 from flask import Blueprint, flash, jsonify, redirect, render_template, request, url_for
 from flask_login import login_required
 
-from app.repositories.db import get_connection
-from app.repositories import produto_repo, movimentacao_repo
+from app.repositories.fs import produto_repo, movimentacao_repo
 from app.services import estoque_service
 from app.utils.validators import ValidacaoError
+from web.models import get_store
 
 estoque_bp = Blueprint("estoque", __name__)
 
@@ -20,11 +20,10 @@ estoque_bp = Blueprint("estoque", __name__)
 def index():
     hoje = date.today()
     inicio_mes = hoje.replace(day=1)
-    conn = get_connection()
-    produtos = produto_repo.listar_todos(conn)
-    resumo = estoque_service.resumo_periodo(conn, inicio_mes, hoje)
-    movs = movimentacao_repo.listar_periodo(conn, inicio_mes, hoje)
-    conn.close()
+    store = get_store()
+    produtos = produto_repo.listar_todos(store)
+    resumo = estoque_service.resumo_periodo(store, inicio_mes, hoje)
+    movs = movimentacao_repo.listar_periodo(store, inicio_mes, hoje)
     return render_template(
         "estoque.html",
         produtos=produtos,
@@ -38,7 +37,7 @@ def index():
 @estoque_bp.route("/estoque/compra", methods=["POST"])
 @login_required
 def registrar_compra():
-    conn = get_connection()
+    store = get_store()
     try:
         pid_raw = request.form["produto_id"]
         quantidade = int(request.form["quantidade"])
@@ -51,19 +50,17 @@ def registrar_compra():
             nome = (request.form.get("novo_nome") or "").strip()
             custo_str = (request.form.get("novo_preco_custo") or "0").replace(",", ".")
             venda_str = (request.form.get("novo_preco_venda") or "0").replace(",", ".")
-            custo_novo = round(float(custo_str) * 100)
-            venda_novo = round(float(venda_str) * 100)
             produto_id = estoque_service.cadastrar_produto(
-                conn,
+                store,
                 nome=nome,
-                preco_custo=custo_novo,
-                preco_venda=venda_novo,
+                preco_custo=round(float(custo_str) * 100),
+                preco_venda=round(float(venda_str) * 100),
             )
         else:
             produto_id = int(pid_raw)
 
         estoque_service.registrar_compra(
-            conn,
+            store,
             produto_id=produto_id,
             quantidade=quantidade,
             preco_custo_unitario=preco_unitario,
@@ -73,15 +70,13 @@ def registrar_compra():
         flash("Compra registrada! Estoque atualizado.", "success")
     except (ValidacaoError, ValueError, KeyError) as e:
         flash(str(e), "error")
-    finally:
-        conn.close()
     return redirect(url_for("estoque.index"))
 
 
 @estoque_bp.route("/estoque/venda", methods=["POST"])
 @login_required
 def registrar_venda():
-    conn = get_connection()
+    store = get_store()
     try:
         produto_id = int(request.form["produto_id"])
         quantidade = int(request.form["quantidade"])
@@ -91,7 +86,7 @@ def registrar_venda():
         observacao = request.form.get("observacao") or None
 
         estoque_service.registrar_venda(
-            conn,
+            store,
             produto_id=produto_id,
             quantidade=quantidade,
             preco_venda_unitario=preco_unitario,
@@ -101,34 +96,29 @@ def registrar_venda():
         flash("Venda registrada!", "success")
     except (ValidacaoError, ValueError, KeyError) as e:
         flash(str(e), "error")
-    finally:
-        conn.close()
     return redirect(url_for("estoque.index"))
 
 
 @estoque_bp.route("/estoque/ajuste", methods=["POST"])
 @login_required
 def ajustar():
-    conn = get_connection()
+    store = get_store()
     try:
         produto_id = int(request.form["produto_id"])
         nova_qtd = int(request.form["nova_quantidade"])
         observacao = request.form.get("observacao") or None
-        estoque_service.ajustar_estoque(conn, produto_id=produto_id, nova_quantidade=nova_qtd, observacao=observacao)
+        estoque_service.ajustar_estoque(store, produto_id=produto_id, nova_quantidade=nova_qtd, observacao=observacao)
         flash("Estoque ajustado.", "success")
     except (ValidacaoError, ValueError, KeyError) as e:
         flash(str(e), "error")
-    finally:
-        conn.close()
     return redirect(url_for("estoque.index"))
 
 
 @estoque_bp.route("/api/produto/<int:produto_id>")
 @login_required
 def api_produto(produto_id: int):
-    conn = get_connection()
-    row = produto_repo.obter(conn, produto_id)
-    conn.close()
+    store = get_store()
+    row = produto_repo.obter(store, produto_id)
     if not row:
         return jsonify({"error": "not found"}), 404
     return jsonify({

@@ -2,15 +2,14 @@
 
 from __future__ import annotations
 
-import sqlite3
-
 from flask import Blueprint, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from app.repositories.db import get_connection
-from app.repositories import categoria_repo, item_frequente_repo, produto_repo, servico_repo
+from app.repositories.fs import categoria_repo, item_frequente_repo, produto_repo, servico_repo
 from app.utils.validators import ValidacaoError
+from web.models import get_store
 
 config_bp = Blueprint("config", __name__)
 
@@ -27,12 +26,13 @@ def index():
     tab = request.args.get("tab", "servicos")
     if tab not in TABS:
         tab = "servicos"
-    conn = get_connection()
-    servicos = servico_repo.listar_todos(conn)
-    categorias = categoria_repo.listar_todas(conn)
-    itens = item_frequente_repo.listar_todos(conn)
-    produtos = produto_repo.listar_todos(conn)
-    conn.close()
+    store = get_store()
+    servicos = servico_repo.listar_todos(store)
+    categorias = categoria_repo.listar_todas(store)
+    itens_raw = item_frequente_repo.listar_todos(store)
+    cat_map = {c["id"]: c for c in categorias}
+    itens = [{**i, "cat_nome": cat_map.get(i.get("categoria_id"), {}).get("nome", ""), "cat_icone": cat_map.get(i.get("categoria_id"), {}).get("icone", "📦")} for i in itens_raw]
+    produtos = produto_repo.listar_todos(store)
     return render_template(
         "config.html",
         tab=tab,
@@ -48,7 +48,7 @@ def index():
 @config_bp.route("/config/servico/novo", methods=["POST"])
 @login_required
 def servico_novo():
-    conn = get_connection()
+    store = get_store()
     try:
         nome = request.form["nome"].strip()
         preco = round(float(request.form["preco_padrao"].replace(",", ".")) * 100)
@@ -56,22 +56,18 @@ def servico_novo():
         ordem = int(request.form.get("ordem") or 999)
         if not nome:
             raise ValidacaoError("Nome é obrigatório.")
-        servico_repo.criar(conn, nome=nome, preco_padrao=preco,
+        servico_repo.criar(store, nome=nome, preco_padrao=preco,
                            categoria_servico=categoria, ordem=ordem)
         flash("Serviço criado.", "success")
-    except sqlite3.IntegrityError:
-        flash("Já existe um serviço com esse nome.", "error")
     except (ValidacaoError, ValueError) as e:
         flash(str(e), "error")
-    finally:
-        conn.close()
     return _redir("servicos")
 
 
 @config_bp.route("/config/servico/<int:sid>/edit", methods=["POST"])
 @login_required
 def servico_edit(sid: int):
-    conn = get_connection()
+    store = get_store()
     try:
         nome = request.form["nome"].strip()
         preco = round(float(request.form["preco_padrao"].replace(",", ".")) * 100)
@@ -79,26 +75,23 @@ def servico_edit(sid: int):
         ordem = int(request.form.get("ordem") or 999)
         if not nome:
             raise ValidacaoError("Nome é obrigatório.")
-        servico_repo.atualizar(conn, sid, nome=nome, preco_padrao=preco,
+        servico_repo.atualizar(store, sid, nome=nome, preco_padrao=preco,
                                categoria_servico=categoria, ordem=ordem)
         flash("Serviço atualizado.", "success")
     except (ValidacaoError, ValueError) as e:
         flash(str(e), "error")
-    finally:
-        conn.close()
     return _redir("servicos")
 
 
 @config_bp.route("/config/servico/<int:sid>/toggle", methods=["POST"])
 @login_required
 def servico_toggle(sid: int):
-    conn = get_connection()
-    row = servico_repo.obter(conn, sid)
+    store = get_store()
+    row = servico_repo.obter(store, sid)
     if row:
-        novo = not bool(row["ativo"])
-        servico_repo.atualizar(conn, sid, ativo=novo)
+        novo = not bool(row.get("ativo", True))
+        servico_repo.atualizar(store, sid, ativo=novo)
         flash("Serviço " + ("ativado" if novo else "desativado") + ".", "success")
-    conn.close()
     return _redir("servicos")
 
 
@@ -107,51 +100,44 @@ def servico_toggle(sid: int):
 @config_bp.route("/config/categoria/nova", methods=["POST"])
 @login_required
 def categoria_nova():
-    conn = get_connection()
+    store = get_store()
     try:
         nome = request.form["nome"].strip()
         icone = request.form.get("icone") or "📦"
         if not nome:
             raise ValidacaoError("Nome é obrigatório.")
-        categoria_repo.criar(conn, nome=nome, icone=icone)
+        categoria_repo.criar(store, nome=nome, icone=icone)
         flash("Categoria criada.", "success")
-    except sqlite3.IntegrityError:
-        flash("Já existe uma categoria com esse nome.", "error")
     except (ValidacaoError, ValueError) as e:
         flash(str(e), "error")
-    finally:
-        conn.close()
     return _redir("categorias")
 
 
 @config_bp.route("/config/categoria/<int:cid>/edit", methods=["POST"])
 @login_required
 def categoria_edit(cid: int):
-    conn = get_connection()
+    store = get_store()
     try:
         nome = request.form["nome"].strip()
         icone = request.form.get("icone") or "📦"
         if not nome:
             raise ValidacaoError("Nome é obrigatório.")
-        categoria_repo.atualizar(conn, cid, nome=nome, icone=icone)
+        categoria_repo.atualizar(store, cid, nome=nome, icone=icone)
         flash("Categoria atualizada.", "success")
     except (ValidacaoError, ValueError) as e:
         flash(str(e), "error")
-    finally:
-        conn.close()
     return _redir("categorias")
 
 
 @config_bp.route("/config/categoria/<int:cid>/toggle", methods=["POST"])
 @login_required
 def categoria_toggle(cid: int):
-    conn = get_connection()
-    row = categoria_repo.obter(conn, cid)
+    store = get_store()
+    row = categoria_repo.obter(store, cid)
     if row:
-        novo = not bool(row["ativo"])
-        categoria_repo.atualizar(conn, cid, ativo=novo)
+        novo = not bool(row.get("ativo", True))
+        categoria_repo.atualizar(store, cid, ativo=novo)
         flash("Categoria " + ("ativada" if novo else "desativada") + ".", "success")
-    conn.close()
     return _redir("categorias")
 
 
@@ -160,7 +146,7 @@ def categoria_toggle(cid: int):
 @config_bp.route("/config/item/novo", methods=["POST"])
 @login_required
 def item_novo():
-    conn = get_connection()
+    store = get_store()
     try:
         descricao = request.form["descricao"].strip()
         categoria_id = int(request.form["categoria_id"])
@@ -168,20 +154,18 @@ def item_novo():
         valor = round(float(val_str.replace(",", ".")) * 100) if val_str else None
         if not descricao:
             raise ValidacaoError("Descrição é obrigatória.")
-        item_frequente_repo.criar(conn, descricao=descricao,
+        item_frequente_repo.criar(store, descricao=descricao,
                                   categoria_id=categoria_id, valor_sugerido=valor)
         flash("Item criado.", "success")
     except (ValidacaoError, ValueError) as e:
         flash(str(e), "error")
-    finally:
-        conn.close()
     return _redir("itens")
 
 
 @config_bp.route("/config/item/<int:iid>/edit", methods=["POST"])
 @login_required
 def item_edit(iid: int):
-    conn = get_connection()
+    store = get_store()
     try:
         descricao = request.form["descricao"].strip()
         categoria_id = int(request.form["categoria_id"])
@@ -189,26 +173,23 @@ def item_edit(iid: int):
         valor = round(float(val_str.replace(",", ".")) * 100) if val_str else None
         if not descricao:
             raise ValidacaoError("Descrição é obrigatória.")
-        item_frequente_repo.atualizar(conn, iid, descricao=descricao,
+        item_frequente_repo.atualizar(store, iid, descricao=descricao,
                                      categoria_id=categoria_id, valor_sugerido=valor)
         flash("Item atualizado.", "success")
     except (ValidacaoError, ValueError) as e:
         flash(str(e), "error")
-    finally:
-        conn.close()
     return _redir("itens")
 
 
 @config_bp.route("/config/item/<int:iid>/toggle", methods=["POST"])
 @login_required
 def item_toggle(iid: int):
-    conn = get_connection()
-    row = item_frequente_repo.obter(conn, iid)
+    store = get_store()
+    row = item_frequente_repo.obter(store, iid)
     if row:
-        novo = not bool(row["ativo"])
-        item_frequente_repo.atualizar(conn, iid, ativo=novo)
+        novo = not bool(row.get("ativo", True))
+        item_frequente_repo.atualizar(store, iid, ativo=novo)
         flash("Item " + ("ativado" if novo else "desativado") + ".", "success")
-    conn.close()
     return _redir("itens")
 
 
@@ -217,7 +198,7 @@ def item_toggle(iid: int):
 @config_bp.route("/config/produto/<int:pid>/edit", methods=["POST"])
 @login_required
 def produto_edit(pid: int):
-    conn = get_connection()
+    store = get_store()
     try:
         nome = request.form["nome"].strip()
         descricao = request.form.get("descricao") or None
@@ -227,30 +208,27 @@ def produto_edit(pid: int):
             raise ValidacaoError("Nome é obrigatório.")
         if venda < custo:
             raise ValidacaoError("Preço de venda não pode ser menor que o custo.")
-        produto_repo.atualizar(conn, pid, nome=nome, descricao=descricao,
+        produto_repo.atualizar(store, pid, nome=nome, descricao=descricao,
                                preco_custo=custo, preco_venda=venda)
         flash("Produto atualizado.", "success")
     except (ValidacaoError, ValueError) as e:
         flash(str(e), "error")
-    finally:
-        conn.close()
     return _redir("produtos")
 
 
 @config_bp.route("/config/produto/<int:pid>/toggle", methods=["POST"])
 @login_required
 def produto_toggle(pid: int):
-    conn = get_connection()
-    row = produto_repo.obter(conn, pid)
+    store = get_store()
+    row = produto_repo.obter(store, pid)
     if row:
-        novo = 0 if row["ativo"] else 1
-        produto_repo.atualizar(conn, pid, ativo=novo)
+        novo = not bool(row.get("ativo", True))
+        produto_repo.atualizar(store, pid, ativo=novo)
         flash("Produto " + ("ativado" if novo else "desativado") + ".", "success")
-    conn.close()
     return _redir("produtos")
 
 
-# ── Conta ─────────────────────────────────────────────────────────────────────
+# ── Conta (continua em SQLite — autenticação) ─────────────────────────────────
 
 @config_bp.route("/config/conta", methods=["POST"])
 @login_required

@@ -1,0 +1,206 @@
+{% extends "base.html" %}
+
+{% block title %}Chat — Flux Barber{% endblock %}
+
+{% block content %}
+<div class="flex flex-col h-full" style="height: calc(100vh - 9rem);">
+
+  <!-- Cabeçalho -->
+  <div class="mb-4 flex items-center gap-3">
+    <div class="w-9 h-9 rounded-xl bg-brand/20 border border-brand/40 flex items-center justify-center">
+      <svg class="w-5 h-5 text-brand" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+          d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
+      </svg>
+    </div>
+    <div>
+      <h1 class="text-white font-semibold text-base leading-none">Assistente Brodz</h1>
+      <p class="text-gray-500 text-xs mt-0.5">Registre atendimentos, despesas e vendas por texto</p>
+    </div>
+  </div>
+
+  <!-- Área de mensagens -->
+  <div id="messages"
+    class="flex-1 overflow-y-auto flex flex-col gap-3 pr-1 mb-4"
+    style="scroll-behavior: smooth;">
+
+    <!-- Mensagem inicial do assistente -->
+    <div class="flex items-end gap-2 max-w-[85%]">
+      <div class="w-6 h-6 rounded-full bg-brand/20 border border-brand/40 flex items-center justify-center shrink-0 mb-0.5">
+        <span class="text-brand text-xs font-bold">B</span>
+      </div>
+      <div class="bg-gray-700 text-gray-100 rounded-2xl rounded-bl-sm px-4 py-3 text-sm leading-relaxed">
+        Olá! Pode mandar o que aconteceu:
+        <br><br>
+        <span class="text-gray-400">Exemplos:</span>
+        <ul class="mt-1 space-y-0.5 text-gray-300">
+          <li>• <em>"corte, R$35, PIX"</em></li>
+          <li>• <em>"aluguel R$800, boleto"</em></li>
+          <li>• <em>"quanto fiz hoje?"</em></li>
+          <li>• <em>"vendi 2 pomadas, R$25 cada"</em></li>
+        </ul>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Input -->
+  <div class="relative flex items-end gap-3">
+    <textarea
+      id="input"
+      rows="1"
+      placeholder="Digite aqui… (Enter para enviar)"
+      class="flex-1 resize-none bg-gray-800 border border-gray-600 rounded-xl px-4 py-3 text-sm text-gray-100
+             placeholder-gray-500 focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand
+             transition-colors leading-relaxed"
+      style="max-height: 120px; overflow-y: auto;"
+    ></textarea>
+    <button
+      id="send-btn"
+      onclick="sendMessage()"
+      class="shrink-0 w-11 h-11 rounded-xl bg-brand hover:bg-brand-dark disabled:opacity-40 disabled:cursor-not-allowed
+             flex items-center justify-center transition-colors"
+    >
+      <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+          d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
+      </svg>
+    </button>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const messagesEl = document.getElementById('messages');
+  const inputEl    = document.getElementById('input');
+  const sendBtn    = document.getElementById('send-btn');
+
+  // Histórico de mensagens para a API (texto simples)
+  let history = [];
+
+  // Auto-resize do textarea
+  inputEl.addEventListener('input', () => {
+    inputEl.style.height = 'auto';
+    inputEl.style.height = Math.min(inputEl.scrollHeight, 120) + 'px';
+  });
+
+  // Enter envia, Shift+Enter quebra linha
+  inputEl.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  });
+
+  function scrollToBottom() {
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+  }
+
+  function appendMessage(role, text) {
+    const isUser = role === 'user';
+    const wrapper = document.createElement('div');
+    wrapper.className = isUser
+      ? 'flex items-end gap-2 justify-end'
+      : 'flex items-end gap-2 max-w-[85%]';
+
+    if (!isUser) {
+      wrapper.innerHTML = `
+        <div class="w-6 h-6 rounded-full bg-brand/20 border border-brand/40 flex items-center justify-center shrink-0 mb-0.5">
+          <span class="text-brand text-xs font-bold">B</span>
+        </div>`;
+    }
+
+    const bubble = document.createElement('div');
+    bubble.className = isUser
+      ? 'bg-brand text-white rounded-2xl rounded-br-sm px-4 py-3 text-sm leading-relaxed max-w-[80%]'
+      : 'bg-gray-700 text-gray-100 rounded-2xl rounded-bl-sm px-4 py-3 text-sm leading-relaxed';
+
+    bubble.innerHTML = formatText(text);
+    wrapper.appendChild(bubble);
+    messagesEl.appendChild(wrapper);
+    scrollToBottom();
+  }
+
+  function appendTyping() {
+    const wrapper = document.createElement('div');
+    wrapper.id = 'typing-indicator';
+    wrapper.className = 'flex items-end gap-2 max-w-[85%]';
+    wrapper.innerHTML = `
+      <div class="w-6 h-6 rounded-full bg-brand/20 border border-brand/40 flex items-center justify-center shrink-0 mb-0.5">
+        <span class="text-brand text-xs font-bold">B</span>
+      </div>
+      <div class="bg-gray-700 rounded-2xl rounded-bl-sm px-4 py-3">
+        <div class="flex gap-1 items-center h-4">
+          <span class="w-1.5 h-1.5 rounded-full bg-gray-400 animate-bounce" style="animation-delay:0ms"></span>
+          <span class="w-1.5 h-1.5 rounded-full bg-gray-400 animate-bounce" style="animation-delay:150ms"></span>
+          <span class="w-1.5 h-1.5 rounded-full bg-gray-400 animate-bounce" style="animation-delay:300ms"></span>
+        </div>
+      </div>`;
+    messagesEl.appendChild(wrapper);
+    scrollToBottom();
+  }
+
+  function removeTyping() {
+    const el = document.getElementById('typing-indicator');
+    if (el) el.remove();
+  }
+
+  function formatText(text) {
+    // Escapa HTML, converte quebras de linha, negrito básico
+    return text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\n/g, '<br>');
+  }
+
+  async function sendMessage() {
+    const text = inputEl.value.trim();
+    if (!text) return;
+
+    // Limpa input e desabilita
+    inputEl.value = '';
+    inputEl.style.height = 'auto';
+    sendBtn.disabled = true;
+
+    appendMessage('user', text);
+    appendTyping();
+
+    try {
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: text, history }),
+      });
+
+      const data = await res.json();
+      removeTyping();
+
+      if (data.error) {
+        appendMessage('assistant', '⚠ Erro: ' + data.error);
+      } else {
+        const reply = data.response;
+        appendMessage('assistant', reply);
+
+        // Atualiza histórico (formato simples para o backend)
+        history.push({ role: 'user', content: text });
+        history.push({ role: 'assistant', content: reply });
+
+        // Mantém apenas as últimas 20 trocas (40 mensagens) para não crescer infinito
+        if (history.length > 40) {
+          history = history.slice(history.length - 40);
+        }
+      }
+    } catch (err) {
+      removeTyping();
+      appendMessage('assistant', '⚠ Falha de conexão. Tente novamente.');
+    } finally {
+      sendBtn.disabled = false;
+      inputEl.focus();
+    }
+  }
+</script>
+{% endblock %}

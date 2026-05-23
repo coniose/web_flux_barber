@@ -10,6 +10,8 @@ flask-login
 werkzeug
 gunicorn
 python-dotenv
+anthropic
+firebase-admin
 
 # CLI
 typer>=0.12

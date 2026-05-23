@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
-from flask_login import UserMixin
+import uuid
+
+from flask_login import UserMixin, current_user
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from app.repositories.db import get_connection
@@ -14,6 +16,7 @@ class User(UserMixin):
         self.email = row["email"]
         self.nome = row["nome"]
         self.plano = row["plano"]
+        self.device_id = row["device_id"]
         self._senha_hash = row["senha_hash"]
 
     @property
@@ -47,10 +50,11 @@ class User(UserMixin):
     @classmethod
     def criar(cls, nome: str, email: str, senha: str) -> "User":
         hash_ = generate_password_hash(senha)
+        device_id = uuid.uuid4().hex  # namespace Firestore exclusivo
         conn = get_connection()
         conn.execute(
-            "INSERT INTO usuario (nome, email, senha_hash) VALUES (?, ?, ?)",
-            (nome.strip(), email.lower().strip(), hash_),
+            "INSERT INTO usuario (nome, email, senha_hash, device_id) VALUES (?, ?, ?, ?)",
+            (nome.strip(), email.lower().strip(), hash_, device_id),
         )
         row = conn.execute(
             "SELECT * FROM usuario WHERE email = ?", (email.lower().strip(),)
@@ -67,3 +71,10 @@ class User(UserMixin):
             "UPDATE usuario SET ultimo_acesso = datetime('now') WHERE id = ?", (self.id,)
         )
         conn.close()
+
+
+def get_store():
+    """Retorna um BarberStore para o usuário autenticado."""
+    from app.repositories.firestore_client import get_firestore_client
+    from app.repositories.fs.store import BarberStore
+    return BarberStore(db=get_firestore_client(), device_id=current_user.device_id)

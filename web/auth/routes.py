@@ -60,6 +60,17 @@ def register():
                 flash(e, "error")
         else:
             user = User.criar(nome, email, senha)
+
+            # Semeia o catálogo inicial no Firestore do novo usuário
+            try:
+                from app.repositories.firestore_client import get_firestore_client
+                from app.repositories.fs.seed import apply_seed
+                from app.repositories.fs.store import BarberStore
+                store = BarberStore(db=get_firestore_client(), device_id=user.device_id)
+                apply_seed(store)
+            except Exception as exc:
+                flash(f"Aviso: catálogo inicial não pôde ser criado ({exc}).", "info")
+
             login_user(user)
             flash(f"Bem-vindo, {user.nome}! Conta criada com sucesso.", "success")
             return redirect(url_for("dashboard.index"))

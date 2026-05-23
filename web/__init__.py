@@ -22,7 +22,7 @@ def create_app(test_config: dict | None = None) -> Flask:
     if test_config:
         app.config.update(test_config)
 
-    # Garante DB inicializado (schema + seed + migrations + tabela usuario)
+    # Garante DB SQLite inicializado (só para autenticação)
     conn = ensure_db()
     _ensure_usuario_table(conn)
     conn.close()
@@ -39,14 +39,16 @@ def create_app(test_config: dict | None = None) -> Flask:
         return User.get_by_id(int(user_id))
 
     from web.auth.routes import auth_bp
+    from web.routes.chat import chat_bp
     from web.routes.dashboard import dashboard_bp
-    from web.routes.lancamento import lancamento_bp
-    from web.routes.receitas import receitas_bp
     from web.routes.despesas import despesas_bp
     from web.routes.estoque import estoque_bp
+    from web.routes.lancamento import lancamento_bp
+    from web.routes.receitas import receitas_bp
     from web.routes.config import config_bp
 
     app.register_blueprint(auth_bp)
+    app.register_blueprint(chat_bp)
     app.register_blueprint(dashboard_bp)
     app.register_blueprint(lancamento_bp)
     app.register_blueprint(receitas_bp)
@@ -66,6 +68,7 @@ def _ensure_usuario_table(conn) -> None:
             senha_hash             TEXT    NOT NULL,
             plano                  TEXT    NOT NULL DEFAULT 'free'
                                            CHECK (plano IN ('free', 'pro')),
+            device_id              TEXT,
             stripe_customer_id     TEXT,
             stripe_subscription_id TEXT,
             criado_em              TEXT    NOT NULL DEFAULT (datetime('now')),
@@ -73,3 +76,8 @@ def _ensure_usuario_table(conn) -> None:
         );
         CREATE INDEX IF NOT EXISTS idx_usuario_email ON usuario(email);
     """)
+    # Migração: adiciona device_id em bancos existentes que não têm a coluna
+    try:
+        conn.execute("ALTER TABLE usuario ADD COLUMN device_id TEXT")
+    except Exception:
+        pass  # coluna já existe

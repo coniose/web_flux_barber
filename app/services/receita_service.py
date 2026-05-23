@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
-import sqlite3
 from datetime import date
 from typing import Optional
 
 from app.domain.enums import FormaPagamento
-from app.repositories import receita_repo, servico_repo
+from app.repositories.fs import receita_repo, servico_repo
+from app.repositories.fs.store import BarberStore
 from app.utils.validators import (
     ValidacaoError,
     validar_data,
@@ -17,7 +17,7 @@ from app.utils.validators import (
 
 
 def registrar_atendimento_avulso(
-    conn: sqlite3.Connection,
+    store: BarberStore,
     *,
     servico_id: int,
     valor_centavos: int,
@@ -27,11 +27,6 @@ def registrar_atendimento_avulso(
     observacao: Optional[str] = None,
     permitir_data_futura: bool = False,
 ) -> int:
-    """Registra atendimento avulso (sem vínculo de assinatura).
-
-    Retorna o ID da receita criada.
-    Lança ``ValidacaoError`` para erros amigáveis (sem quebrar a UI).
-    """
     data_atendimento = data_atendimento or date.today()
     validar_data(data_atendimento, permitir_futuro=permitir_data_futura)
     validar_valor_positivo(valor_centavos)
@@ -42,66 +37,35 @@ def registrar_atendimento_avulso(
         forma_str = forma_pagamento
         validar_forma_pagamento(forma_str)
 
-    if servico_repo.obter(conn, servico_id) is None:
+    servico = servico_repo.obter(store, servico_id)
+    if servico is None:
         raise ValidacaoError(f"Serviço #{servico_id} não existe.")
 
-    try:
-        return receita_repo.inserir(
-            conn,
-            data_atendimento=data_atendimento,
-            servico_id=servico_id,
-            valor=valor_centavos,
-            forma_pagamento=forma_str,
-            cliente_id=cliente_id,
-            observacao=observacao,
-        )
-    except sqlite3.IntegrityError as e:
-        raise ValidacaoError(f"Não foi possível registrar: {e}") from e
-
-
-def listar_periodo(conn: sqlite3.Connection, de: date, ate: date) -> list[sqlite3.Row]:
-    if de > ate:
-        raise ValidacaoError("A data inicial deve ser anterior ou igual à final.")
-    return receita_repo.listar_periodo(conn, de, ate)
-
-
-def totais_periodo(conn: sqlite3.Connection, de: date, ate: date) -> dict:
-    total, qtd = receita_repo.total_periodo(conn, de, ate)
-    return {"total_centavos": total, "qtd_atendimentos": qtd}
-
-
-def editar_atendimento(
-    conn: sqlite3.Connection,
-    receita_id: int,
-    *,
-    data_atendimento: Optional[date] = None,
-    servico_id: Optional[int] = None,
-    valor_centavos: Optional[int] = None,
-    forma_pagamento: Optional[FormaPagamento | str] = None,
-    observacao: Optional[str] = None,
-) -> bool:
-    if data_atendimento is not None:
-        validar_data(data_atendimento)
-    if valor_centavos is not None:
-        validar_valor_positivo(valor_centavos, zero_permitido=True)
-    forma_str: Optional[str] = None
-    if forma_pagamento is not None:
-        forma_str = forma_pagamento.value if isinstance(forma_pagamento, FormaPagamento) else forma_pagamento
-        validar_forma_pagamento(forma_str)
-
-    return receita_repo.atualizar(
-        conn,
-        receita_id,
+    return receita_repo.inserir(
+        store,
         data_atendimento=data_atendimento,
         servico_id=servico_id,
+        servico_nome=servico.get("nome", ""),
         valor=valor_centavos,
         forma_pagamento=forma_str,
+        cliente_id=cliente_id,
         observacao=observacao,
     )
 
 
-def excluir_atendimento(conn: sqlite3.Connection, receita_id: int) -> bool:
-    return receita_repo.excluir(conn, receita_id)
+def listar_periodo(store: BarberStore, de: date, ate: date) -> list[dict]:
+    if de > ate:
+        raise ValidacaoError("A data inicial deve ser anterior ou igual à final.")
+    return receita_repo.listar_periodo(store, de, ate)
+
+
+def totais_periodo(store: BarberStore, de: date, ate: date) -> dict:
+    total, qtd = receita_repo.total_periodo(store, de, ate)
+    return {"total_centavos": total, "qtd_atendimentos": qtd}
+
+
+def excluir_atendimento(store: BarberStore, receita_id: int) -> bool:
+    return receita_repo.excluir(store, receita_id)
 
 
 # ---------------------------------------------------------------------------
@@ -109,26 +73,19 @@ def excluir_atendimento(conn: sqlite3.Connection, receita_id: int) -> bool:
 # ---------------------------------------------------------------------------
 
 
-def serie_diaria_receita(
-    conn: sqlite3.Connection, de: date, ate: date,
-) -> list[dict]:
-    """Retorna [{data: 'YYYY-MM-DD', total: int, qtd: int}] para o período."""
+def serie_diaria_receita(store: BarberStore, de: date, ate: date) -> list[dict]:
     if de > ate:
         raise ValidacaoError("A data inicial deve ser anterior ou igual à final.")
-    return [dict(r) for r in receita_repo.serie_diaria(conn, de, ate)]
+    return receita_repo.serie_diaria(store, de, ate)
 
 
-def ranking_servicos(
-    conn: sqlite3.Connection, de: date, ate: date, limite: int = 10,
-) -> list[dict]:
+def ranking_servicos(store: BarberStore, de: date, ate: date, limite: int = 10) -> list[dict]:
     if de > ate:
         raise ValidacaoError("A data inicial deve ser anterior ou igual à final.")
-    return [dict(r) for r in receita_repo.ranking_servicos(conn, de, ate, limite)]
+    return receita_repo.ranking_servicos(store, de, ate, limite)
 
 
-def mix_forma_pagamento(
-    conn: sqlite3.Connection, de: date, ate: date,
-) -> list[dict]:
+def mix_forma_pagamento(store: BarberStore, de: date, ate: date) -> list[dict]:
     if de > ate:
         raise ValidacaoError("A data inicial deve ser anterior ou igual à final.")
-    return [dict(r) for r in receita_repo.mix_forma_pagamento(conn, de, ate)]
+    return receita_repo.mix_forma_pagamento(store, de, ate)
