@@ -3,10 +3,16 @@
 from __future__ import annotations
 
 import os
+from pathlib import Path
+
+from dotenv import load_dotenv
 from flask import Flask
 from flask_login import LoginManager
 
 from app.repositories.db import ensure_db
+
+# Carrega .env tanto quando iniciado via `flask run` quanto via wsgi.py
+load_dotenv(Path(__file__).parent.parent / ".env")
 
 login_manager = LoginManager()
 
@@ -79,12 +85,21 @@ def _ensure_usuario_table(conn) -> None:
         );
         CREATE INDEX IF NOT EXISTS idx_usuario_email ON usuario(email);
     """)
+    # Tabela de idempotência para webhooks Stripe
+    conn.executescript("""
+        CREATE TABLE IF NOT EXISTS stripe_events (
+            event_id      TEXT PRIMARY KEY,
+            tipo          TEXT NOT NULL,
+            processado_em TEXT NOT NULL DEFAULT (datetime('now'))
+        );
+    """)
     # Migrações incrementais para bancos existentes
     for migration in [
         "ALTER TABLE usuario ADD COLUMN device_id TEXT",
         "ALTER TABLE usuario ADD COLUMN plano TEXT NOT NULL DEFAULT 'free'",
         "ALTER TABLE usuario ADD COLUMN stripe_customer_id TEXT",
         "ALTER TABLE usuario ADD COLUMN stripe_subscription_id TEXT",
+        "ALTER TABLE usuario ADD COLUMN plano_verificado_em TEXT",
     ]:
         try:
             conn.execute(migration)

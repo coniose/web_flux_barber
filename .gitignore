@@ -43,3 +43,10 @@ Thumbs.db
 *.png
 !resources/**/*.png
 !resources/**/*.jpg
+
+# ---- Stripe sample code (Ruby) — não faz parte do projeto ----
+stripe-sample-code/
+server.rb
+Gemfile
+Gemfile.lock
+public/

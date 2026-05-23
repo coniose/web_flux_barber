@@ -18,6 +18,8 @@ class User(UserMixin):
         self.plano = row["plano"]
         self.device_id = row["device_id"]
         self.stripe_customer_id = row["stripe_customer_id"]
+        self.stripe_subscription_id = row["stripe_subscription_id"]
+        self.plano_verificado_em = row["plano_verificado_em"]
         self._senha_hash = row["senha_hash"]
 
     @property

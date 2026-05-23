@@ -311,6 +311,13 @@ def _run_agentic_loop(messages: list[dict]) -> str:
 @chat_bp.route("/chat")
 @login_required
 def index():
+    # Verifica assinatura no Stripe se a última checagem foi há mais de 12h
+    if current_user.is_pro:
+        from web.routes.billing import verificar_plano_stripe
+        if verificar_plano_stripe(current_user):
+            flash("Sua assinatura Pro foi cancelada. Renove para continuar.", "info")
+            return redirect(url_for("billing.upgrade"))
+
     if not current_user.is_pro:
         flash("O assistente de IA é exclusivo do plano Pro.", "info")
         return redirect(url_for("lancamento.index"))

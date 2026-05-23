@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from datetime import datetime, timezone
+
 import stripe
 from flask import Blueprint, current_app, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
@@ -111,44 +113,117 @@ def webhook():
     except Exception:
         return "Payload inválido", 400
 
+    event_id = event["id"]
     etype = event["type"]
     data = event["data"]["object"]
 
-    if etype == "checkout.session.completed":
-        _ativar_pro(
-            user_id=data.get("client_reference_id"),
-            customer_id=data.get("customer"),
-            subscription_id=data.get("subscription"),
+    conn = get_connection()
+    try:
+        # Idempotência: ignora eventos já processados (proteção contra retentativas duplicadas)
+        if conn.execute(
+            "SELECT 1 FROM stripe_events WHERE event_id = ?", (event_id,)
+        ).fetchone():
+            return "", 200
+
+        if etype == "checkout.session.completed":
+            _ativar_pro(
+                conn=conn,
+                user_id=data.get("client_reference_id"),
+                customer_id=data.get("customer"),
+                subscription_id=data.get("subscription"),
+            )
+        elif etype == "customer.subscription.deleted":
+            _desativar_pro(conn=conn, subscription_id=data.get("id"))
+
+        conn.execute(
+            "INSERT OR IGNORE INTO stripe_events (event_id, tipo) VALUES (?, ?)",
+            (event_id, etype),
         )
-    elif etype == "customer.subscription.deleted":
-        _desativar_pro(subscription_id=data.get("id"))
+    except Exception as e:
+        current_app.logger.error("Webhook processing error: %s", e)
+        return "Erro interno", 500
+    finally:
+        conn.close()
 
     return "", 200
 
 
-def _ativar_pro(user_id, customer_id, subscription_id):
+def _ativar_pro(conn, user_id, customer_id, subscription_id):
     if not user_id:
         return
-    conn = get_connection()
     conn.execute(
         """UPDATE usuario
            SET plano = 'pro',
                stripe_customer_id = ?,
-               stripe_subscription_id = ?
+               stripe_subscription_id = ?,
+               plano_verificado_em = datetime('now')
            WHERE id = ?""",
         (customer_id, subscription_id, int(user_id)),
     )
-    conn.close()
 
 
-def _desativar_pro(subscription_id):
+def _desativar_pro(conn, subscription_id):
     if not subscription_id:
         return
-    conn = get_connection()
     conn.execute(
         """UPDATE usuario
-           SET plano = 'free', stripe_subscription_id = NULL
+           SET plano = 'free',
+               stripe_subscription_id = NULL,
+               plano_verificado_em = datetime('now')
            WHERE stripe_subscription_id = ?""",
         (subscription_id,),
     )
-    conn.close()
+
+
+# ── Verificação periódica de assinatura ───────────────────────────────────────
+
+def verificar_plano_stripe(user) -> bool:
+    """
+    Consulta o Stripe para confirmar que a assinatura ainda está ativa.
+    Só executa se a última verificação foi há mais de 12 horas.
+    Fail open: se o Stripe estiver inacessível, não rebaixa o usuário.
+    Retorna True se o plano foi rebaixado para free.
+    """
+    if not user.is_pro or not user.stripe_subscription_id:
+        return False
+
+    # Só re-verifica se passou mais de 12 horas desde a última checagem
+    if user.plano_verificado_em:
+        try:
+            ultima = datetime.fromisoformat(user.plano_verificado_em)
+            if ultima.tzinfo is None:
+                ultima = ultima.replace(tzinfo=timezone.utc)
+            if (datetime.now(timezone.utc) - ultima).total_seconds() < 43200:
+                return False
+        except ValueError:
+            pass
+
+    try:
+        stripe.api_key = current_app.config["STRIPE_SECRET_KEY"]
+        sub = stripe.Subscription.retrieve(user.stripe_subscription_id)
+
+        conn = get_connection()
+        if sub.status in ("canceled", "unpaid", "incomplete_expired"):
+            conn.execute(
+                """UPDATE usuario
+                   SET plano = 'free',
+                       stripe_subscription_id = NULL,
+                       plano_verificado_em = datetime('now')
+                   WHERE id = ?""",
+                (user.id,),
+            )
+            conn.close()
+            current_app.logger.info(
+                "Usuário #%s rebaixado para free (status Stripe: %s)", user.id, sub.status
+            )
+            return True
+        else:
+            conn.execute(
+                "UPDATE usuario SET plano_verificado_em = datetime('now') WHERE id = ?",
+                (user.id,),
+            )
+            conn.close()
+    except stripe.StripeError as e:
+        current_app.logger.warning("Stripe inacessível ao verificar plano: %s", e)
+
+    return False

@@ -24,6 +24,9 @@ def login():
         if user and user.verificar_senha(senha):
             login_user(user, remember=lembrar)
             user.registrar_acesso()
+            # Verifica assinatura Stripe no login para capturar cancelamentos perdidos
+            from web.routes.billing import verificar_plano_stripe
+            verificar_plano_stripe(user)
             next_page = request.args.get("next")
             return redirect(next_page or url_for("dashboard.index"))
 
