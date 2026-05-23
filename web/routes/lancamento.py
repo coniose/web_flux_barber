@@ -7,10 +7,10 @@ from datetime import date
 from flask import Blueprint, flash, jsonify, redirect, render_template, request, url_for
 from flask_login import login_required
 
-from app.repositories.fs import servico_repo, categoria_repo, item_frequente_repo, produto_repo
+from app.repositories.sql import servico_repo, categoria_repo, item_frequente_repo, produto_repo
 from app.services import receita_service, despesa_service, estoque_service
 from app.utils.validators import ValidacaoError
-from web.models import get_store
+from web.models import get_user_conn
 
 lancamento_bp = Blueprint("lancamento", __name__)
 
@@ -18,10 +18,10 @@ lancamento_bp = Blueprint("lancamento", __name__)
 @lancamento_bp.route("/lancar")
 @login_required
 def index():
-    store = get_store()
-    servicos = servico_repo.listar_ativos(store)
-    categorias = categoria_repo.listar_ativas(store)
-    itens_raw = item_frequente_repo.listar_ativos_ordenado_por_uso(store)
+    conn = get_user_conn()
+    servicos = servico_repo.listar_ativos(conn)
+    categorias = categoria_repo.listar_ativas(conn)
+    itens_raw = item_frequente_repo.listar_ativos_ordenado_por_uso(conn)
 
     # Enriquecer itens com dados da categoria para o template
     cat_map = {c["id"]: c for c in categorias}
@@ -34,7 +34,7 @@ def index():
             "cat_icone": cat.get("icone", "📦"),
         })
 
-    produtos = produto_repo.listar_ativos(store)
+    produtos = produto_repo.listar_ativos(conn)
     return render_template(
         "lancamento.html",
         servicos=servicos,
@@ -48,7 +48,7 @@ def index():
 @lancamento_bp.route("/lancar/atendimento", methods=["POST"])
 @login_required
 def registrar_atendimento():
-    store = get_store()
+    conn = get_user_conn()
     try:
         servico_id = int(request.form["servico_id"])
         valor_reais = float(request.form["valor"].replace(",", "."))
@@ -59,7 +59,7 @@ def registrar_atendimento():
         data_obj = date.fromisoformat(data_str)
 
         receita_service.registrar_atendimento_avulso(
-            store,
+            conn,
             servico_id=servico_id,
             valor_centavos=valor_centavos,
             forma_pagamento=forma,
@@ -76,7 +76,7 @@ def registrar_atendimento():
 @lancamento_bp.route("/lancar/despesa", methods=["POST"])
 @login_required
 def registrar_despesa():
-    store = get_store()
+    conn = get_user_conn()
     try:
         categoria_id = int(request.form["categoria_id"])
         descricao = request.form["descricao"].strip()
@@ -88,7 +88,7 @@ def registrar_despesa():
         data_obj = date.fromisoformat(data_str)
 
         despesa_service.registrar_despesa(
-            store,
+            conn,
             data_despesa=data_obj,
             categoria_id=categoria_id,
             descricao=descricao,
@@ -106,8 +106,8 @@ def registrar_despesa():
 @lancamento_bp.route("/api/sync", methods=["POST"])
 @login_required
 def api_sync():
-    """Recebe lote de operações da fila offline do cliente e persiste no Firestore."""
-    store = get_store()
+    """Recebe lote de operações da fila offline do cliente e persiste no SQLite."""
+    conn = get_user_conn()
     payload = request.get_json(silent=True) or {}
     ops = payload.get("operations", [])
     synced = []
@@ -122,7 +122,7 @@ def api_sync():
 
             if tipo == "atendimento":
                 receita_service.registrar_atendimento_avulso(
-                    store,
+                    conn,
                     servico_id=int(d["servico_id"]),
                     valor_centavos=round(float(d["valor"]) * 100),
                     forma_pagamento=d["forma_pagamento"],
@@ -131,7 +131,7 @@ def api_sync():
                 )
             elif tipo == "despesa":
                 despesa_service.registrar_despesa(
-                    store,
+                    conn,
                     categoria_id=int(d["categoria_id"]),
                     descricao=d["descricao"],
                     valor_centavos=round(float(d["valor"]) * 100),
@@ -141,7 +141,7 @@ def api_sync():
                 )
             elif tipo == "venda_produto":
                 estoque_service.registrar_venda(
-                    store,
+                    conn,
                     produto_id=int(d["produto_id"]),
                     quantidade=int(d["quantidade"]),
                     preco_venda_unitario=round(float(d["preco_venda"]) * 100),
@@ -161,8 +161,8 @@ def api_sync():
 @lancamento_bp.route("/api/servico/<int:servico_id>")
 @login_required
 def api_servico(servico_id: int):
-    store = get_store()
-    row = servico_repo.obter(store, servico_id)
+    conn = get_user_conn()
+    row = servico_repo.obter(conn, servico_id)
     if not row:
         return jsonify({"error": "not found"}), 404
     return jsonify({"id": row["id"], "nome": row["nome"], "preco_padrao": row["preco_padrao"]})

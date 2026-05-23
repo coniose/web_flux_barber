@@ -64,13 +64,13 @@ def register():
         else:
             user = User.criar(nome, email, senha)
 
-            # Semeia o catálogo inicial no Firestore do novo usuário
+            # Semeia o catálogo inicial no SQLite do novo usuário
             try:
-                from app.repositories.firestore_client import get_firestore_client
-                from app.repositories.fs.seed import apply_seed
-                from app.repositories.fs.store import BarberStore
-                store = BarberStore(db=get_firestore_client(), device_id=user.device_id)
-                apply_seed(store)
+                from app.repositories.user_db import get_user_connection
+                from app.repositories.sql.seed import apply_seed
+                conn = get_user_connection(user.device_id)
+                apply_seed(conn)
+                conn.close()
             except Exception as exc:
                 flash(f"Aviso: catálogo inicial não pôde ser criado ({exc}).", "info")
 

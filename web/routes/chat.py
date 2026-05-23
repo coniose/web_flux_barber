@@ -10,10 +10,10 @@ import anthropic
 from flask import Blueprint, abort, flash, jsonify, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 
-from app.repositories.fs import categoria_repo, produto_repo, servico_repo
+from app.repositories.sql import categoria_repo, produto_repo, servico_repo
 from app.services import despesa_service, estoque_service, receita_service
 from app.utils.validators import ValidacaoError
-from web.models import get_store
+from web.models import get_user_conn
 
 chat_bp = Blueprint("chat", __name__)
 
@@ -156,18 +156,18 @@ def _build_system_prompt() -> str:
 
 
 def _execute_tool(name: str, inputs: dict) -> dict:
-    store = get_store()
+    conn = get_user_conn()
     try:
         if name == "listar_servicos":
-            rows = servico_repo.listar_ativos(store)
+            rows = servico_repo.listar_ativos(conn)
             return {"servicos": [{"id": r["id"], "nome": r["nome"], "preco_padrao": r["preco_padrao"]} for r in rows]}
 
         if name == "listar_categorias_despesa":
-            rows = categoria_repo.listar_ativas(store)
+            rows = categoria_repo.listar_ativas(conn)
             return {"categorias": [{"id": r["id"], "nome": r["nome"]} for r in rows]}
 
         if name == "listar_produtos":
-            rows = produto_repo.listar_ativos(store)
+            rows = produto_repo.listar_ativos(conn)
             return {
                 "produtos": [
                     {
@@ -183,7 +183,7 @@ def _execute_tool(name: str, inputs: dict) -> dict:
         if name == "registrar_atendimento":
             data_obj = date.fromisoformat(inputs["data"]) if inputs.get("data") else date.today()
             receita_id = receita_service.registrar_atendimento_avulso(
-                store,
+                conn,
                 servico_id=inputs["servico_id"],
                 valor_centavos=inputs["valor_centavos"],
                 forma_pagamento=inputs["forma_pagamento"],
@@ -195,7 +195,7 @@ def _execute_tool(name: str, inputs: dict) -> dict:
         if name == "registrar_despesa":
             data_obj = date.fromisoformat(inputs["data"]) if inputs.get("data") else date.today()
             despesa_id = despesa_service.registrar_despesa(
-                store,
+                conn,
                 categoria_id=inputs["categoria_id"],
                 descricao=inputs["descricao"],
                 valor_centavos=inputs["valor_centavos"],
@@ -207,7 +207,7 @@ def _execute_tool(name: str, inputs: dict) -> dict:
         if name == "registrar_venda_produto":
             data_obj = date.fromisoformat(inputs["data"]) if inputs.get("data") else date.today()
             mov_id = estoque_service.registrar_venda(
-                store,
+                conn,
                 produto_id=inputs["produto_id"],
                 quantidade=inputs["quantidade"],
                 preco_venda_unitario=inputs["preco_venda_unitario"],
@@ -231,8 +231,8 @@ def _execute_tool(name: str, inputs: dict) -> dict:
                 ate = primeiro_atual - timedelta(days=1)
                 de = ate.replace(day=1)
 
-            rec = receita_service.totais_periodo(store, de, ate)
-            desp = despesa_service.totais_periodo(store, de, ate)
+            rec = receita_service.totais_periodo(conn, de, ate)
+            desp = despesa_service.totais_periodo(conn, de, ate)
             saldo = rec["total_centavos"] - desp["total_centavos"]
             return {
                 "periodo": {"de": de.isoformat(), "ate": ate.isoformat()},

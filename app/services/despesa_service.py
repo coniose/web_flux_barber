@@ -6,8 +6,7 @@ from datetime import date
 from typing import Optional
 
 from app.domain.enums import FormaPagamento
-from app.repositories.fs import despesa_repo, categoria_repo, item_frequente_repo
-from app.repositories.fs.store import BarberStore
+from app.repositories.sql import despesa_repo, categoria_repo, item_frequente_repo
 from app.utils.validators import (
     ValidacaoError,
     validar_data,
@@ -18,7 +17,7 @@ from app.utils.validators import (
 
 
 def registrar_despesa(
-    store: BarberStore,
+    conn,
     *,
     categoria_id: int,
     descricao: str,
@@ -36,18 +35,18 @@ def registrar_despesa(
     forma_str = forma_pagamento.value if isinstance(forma_pagamento, FormaPagamento) else forma_pagamento
     validar_forma_pagamento(forma_str)
 
-    categoria = categoria_repo.obter(store, categoria_id)
+    categoria = categoria_repo.obter(conn, categoria_id)
     if categoria is None:
         raise ValidacaoError(f"Categoria de despesa #{categoria_id} não existe.")
 
     if item_frequente_id is not None:
-        item = item_frequente_repo.obter(store, item_frequente_id)
+        item = item_frequente_repo.obter(conn, item_frequente_id)
         if item is None:
             raise ValidacaoError(f"Item frequente #{item_frequente_id} não existe.")
-        item_frequente_repo.bump_uso(store, item_frequente_id)
+        item_frequente_repo.bump_uso(conn, item_frequente_id)
 
     return despesa_repo.inserir(
-        store,
+        conn,
         data_despesa=data_despesa,
         categoria_id=categoria_id,
         categoria_nome=categoria.get("nome", ""),
@@ -60,23 +59,23 @@ def registrar_despesa(
 
 
 def listar_periodo(
-    store: BarberStore,
+    conn,
     de: date,
     ate: date,
     categoria_id: Optional[int] = None,
 ) -> list[dict]:
     if de > ate:
         raise ValidacaoError("A data inicial deve ser anterior ou igual à final.")
-    return despesa_repo.listar_periodo(store, de, ate, categoria_id=categoria_id)
+    return despesa_repo.listar_periodo(conn, de, ate, categoria_id=categoria_id)
 
 
-def totais_periodo(store: BarberStore, de: date, ate: date) -> dict:
-    total, qtd = despesa_repo.total_periodo(store, de, ate)
+def totais_periodo(conn, de: date, ate: date) -> dict:
+    total, qtd = despesa_repo.total_periodo(conn, de, ate)
     return {"total_centavos": total, "qtd_despesas": qtd}
 
 
-def excluir_despesa(store: BarberStore, despesa_id: int) -> bool:
-    return despesa_repo.excluir(store, despesa_id)
+def excluir_despesa(conn, despesa_id: int) -> bool:
+    return despesa_repo.excluir(conn, despesa_id)
 
 
 # ---------------------------------------------------------------------------
@@ -84,13 +83,13 @@ def excluir_despesa(store: BarberStore, despesa_id: int) -> bool:
 # ---------------------------------------------------------------------------
 
 
-def serie_diaria_despesa(store: BarberStore, de: date, ate: date) -> list[dict]:
+def serie_diaria_despesa(conn, de: date, ate: date) -> list[dict]:
     if de > ate:
         raise ValidacaoError("A data inicial deve ser anterior ou igual à final.")
-    return despesa_repo.serie_diaria(store, de, ate)
+    return despesa_repo.serie_diaria(conn, de, ate)
 
 
-def total_por_categoria(store: BarberStore, de: date, ate: date) -> list[dict]:
+def total_por_categoria(conn, de: date, ate: date) -> list[dict]:
     if de > ate:
         raise ValidacaoError("A data inicial deve ser anterior ou igual à final.")
-    return despesa_repo.total_por_categoria(store, de, ate)
+    return despesa_repo.total_por_categoria(conn, de, ate)

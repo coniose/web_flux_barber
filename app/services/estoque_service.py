@@ -5,13 +5,12 @@ from __future__ import annotations
 from datetime import date
 from typing import Optional
 
-from app.repositories.fs import produto_repo, movimentacao_repo
-from app.repositories.fs.store import BarberStore
+from app.repositories.sql import produto_repo, movimentacao_repo
 from app.utils.validators import ValidacaoError, validar_data, validar_valor_positivo
 
 
 def cadastrar_produto(
-    store: BarberStore,
+    conn,
     *,
     nome: str,
     preco_custo: int,
@@ -28,7 +27,7 @@ def cadastrar_produto(
     if quantidade_inicial < 0:
         raise ValidacaoError("Quantidade inicial não pode ser negativa.")
     return produto_repo.inserir(
-        store,
+        conn,
         nome=nome,
         preco_custo=preco_custo,
         preco_venda=preco_venda,
@@ -38,7 +37,7 @@ def cadastrar_produto(
 
 
 def registrar_compra(
-    store: BarberStore,
+    conn,
     *,
     produto_id: int,
     quantidade: int,
@@ -53,12 +52,12 @@ def registrar_compra(
         raise ValidacaoError("Quantidade deve ser maior que zero.")
     validar_valor_positivo(preco_custo_unitario, zero_permitido=True)
 
-    produto = produto_repo.obter(store, produto_id)
+    produto = produto_repo.obter(conn, produto_id)
     if produto is None:
         raise ValidacaoError(f"Produto #{produto_id} não encontrado.")
 
     mov_id = movimentacao_repo.inserir(
-        store,
+        conn,
         produto_id=produto_id,
         produto_nome=produto.get("nome", ""),
         tipo="COMPRA",
@@ -67,12 +66,12 @@ def registrar_compra(
         data_mov=data_compra,
         observacao=observacao,
     )
-    produto_repo.ajustar_quantidade(store, produto_id, +quantidade)
+    produto_repo.ajustar_quantidade(conn, produto_id, +quantidade)
     return mov_id
 
 
 def registrar_venda(
-    store: BarberStore,
+    conn,
     *,
     produto_id: int,
     quantidade: int,
@@ -87,7 +86,7 @@ def registrar_venda(
         raise ValidacaoError("Quantidade deve ser maior que zero.")
     validar_valor_positivo(preco_venda_unitario)
 
-    produto = produto_repo.obter(store, produto_id)
+    produto = produto_repo.obter(conn, produto_id)
     if produto is None:
         raise ValidacaoError(f"Produto #{produto_id} não encontrado.")
     if produto["quantidade_estoque"] < quantidade:
@@ -96,7 +95,7 @@ def registrar_venda(
         )
 
     mov_id = movimentacao_repo.inserir(
-        store,
+        conn,
         produto_id=produto_id,
         produto_nome=produto.get("nome", ""),
         tipo="VENDA",
@@ -105,12 +104,12 @@ def registrar_venda(
         data_mov=data_venda,
         observacao=observacao,
     )
-    produto_repo.ajustar_quantidade(store, produto_id, -quantidade)
+    produto_repo.ajustar_quantidade(conn, produto_id, -quantidade)
     return mov_id
 
 
 def ajustar_estoque(
-    store: BarberStore,
+    conn,
     *,
     produto_id: int,
     nova_quantidade: int,
@@ -118,7 +117,7 @@ def ajustar_estoque(
 ) -> int:
     if nova_quantidade < 0:
         raise ValidacaoError("Quantidade não pode ser negativa.")
-    produto = produto_repo.obter(store, produto_id)
+    produto = produto_repo.obter(conn, produto_id)
     if produto is None:
         raise ValidacaoError(f"Produto #{produto_id} não encontrado.")
 
@@ -127,7 +126,7 @@ def ajustar_estoque(
         raise ValidacaoError("Nova quantidade igual à atual — nenhum ajuste necessário.")
 
     mov_id = movimentacao_repo.inserir(
-        store,
+        conn,
         produto_id=produto_id,
         produto_nome=produto.get("nome", ""),
         tipo="AJUSTE",
@@ -136,13 +135,13 @@ def ajustar_estoque(
         data_mov=date.today(),
         observacao=observacao or "Ajuste manual de inventário",
     )
-    produto_repo.ajustar_quantidade(store, produto_id, delta)
+    produto_repo.ajustar_quantidade(conn, produto_id, delta)
     return mov_id
 
 
-def resumo_periodo(store: BarberStore, de: date, ate: date) -> dict:
-    totais = movimentacao_repo.totais_periodo(store, de, ate)
-    ranking = movimentacao_repo.ranking_produtos(store, de, ate, limite=5)
+def resumo_periodo(conn, de: date, ate: date) -> dict:
+    totais = movimentacao_repo.totais_periodo(conn, de, ate)
+    ranking = movimentacao_repo.ranking_produtos(conn, de, ate, limite=5)
     margem = totais["VENDA"]["total"] - totais["COMPRA"]["total"]
     return {
         "compras": totais["COMPRA"],

@@ -6,8 +6,7 @@ from datetime import date
 from typing import Optional
 
 from app.domain.enums import FormaPagamento
-from app.repositories.fs import receita_repo, servico_repo
-from app.repositories.fs.store import BarberStore
+from app.repositories.sql import receita_repo, servico_repo
 from app.utils.validators import (
     ValidacaoError,
     validar_data,
@@ -17,7 +16,7 @@ from app.utils.validators import (
 
 
 def registrar_atendimento_avulso(
-    store: BarberStore,
+    conn,
     *,
     servico_id: int,
     valor_centavos: int,
@@ -37,12 +36,12 @@ def registrar_atendimento_avulso(
         forma_str = forma_pagamento
         validar_forma_pagamento(forma_str)
 
-    servico = servico_repo.obter(store, servico_id)
+    servico = servico_repo.obter(conn, servico_id)
     if servico is None:
         raise ValidacaoError(f"Serviço #{servico_id} não existe.")
 
     return receita_repo.inserir(
-        store,
+        conn,
         data_atendimento=data_atendimento,
         servico_id=servico_id,
         servico_nome=servico.get("nome", ""),
@@ -53,19 +52,19 @@ def registrar_atendimento_avulso(
     )
 
 
-def listar_periodo(store: BarberStore, de: date, ate: date) -> list[dict]:
+def listar_periodo(conn, de: date, ate: date) -> list[dict]:
     if de > ate:
         raise ValidacaoError("A data inicial deve ser anterior ou igual à final.")
-    return receita_repo.listar_periodo(store, de, ate)
+    return receita_repo.listar_periodo(conn, de, ate)
 
 
-def totais_periodo(store: BarberStore, de: date, ate: date) -> dict:
-    total, qtd = receita_repo.total_periodo(store, de, ate)
+def totais_periodo(conn, de: date, ate: date) -> dict:
+    total, qtd = receita_repo.total_periodo(conn, de, ate)
     return {"total_centavos": total, "qtd_atendimentos": qtd}
 
 
-def excluir_atendimento(store: BarberStore, receita_id: int) -> bool:
-    return receita_repo.excluir(store, receita_id)
+def excluir_atendimento(conn, receita_id: int) -> bool:
+    return receita_repo.excluir(conn, receita_id)
 
 
 # ---------------------------------------------------------------------------
@@ -73,19 +72,19 @@ def excluir_atendimento(store: BarberStore, receita_id: int) -> bool:
 # ---------------------------------------------------------------------------
 
 
-def serie_diaria_receita(store: BarberStore, de: date, ate: date) -> list[dict]:
+def serie_diaria_receita(conn, de: date, ate: date) -> list[dict]:
     if de > ate:
         raise ValidacaoError("A data inicial deve ser anterior ou igual à final.")
-    return receita_repo.serie_diaria(store, de, ate)
+    return receita_repo.serie_diaria(conn, de, ate)
 
 
-def ranking_servicos(store: BarberStore, de: date, ate: date, limite: int = 10) -> list[dict]:
+def ranking_servicos(conn, de: date, ate: date, limite: int = 10) -> list[dict]:
     if de > ate:
         raise ValidacaoError("A data inicial deve ser anterior ou igual à final.")
-    return receita_repo.ranking_servicos(store, de, ate, limite)
+    return receita_repo.ranking_servicos(conn, de, ate, limite)
 
 
-def mix_forma_pagamento(store: BarberStore, de: date, ate: date) -> list[dict]:
+def mix_forma_pagamento(conn, de: date, ate: date) -> list[dict]:
     if de > ate:
         raise ValidacaoError("A data inicial deve ser anterior ou igual à final.")
-    return receita_repo.mix_forma_pagamento(store, de, ate)
+    return receita_repo.mix_forma_pagamento(conn, de, ate)

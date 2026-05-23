@@ -7,9 +7,9 @@ from datetime import date
 from flask import Blueprint, flash, redirect, render_template, request, url_for
 from flask_login import login_required
 
-from app.repositories.fs import despesa_repo
+from app.repositories.sql import despesa_repo
 from app.services import despesa_service
-from web.models import get_store
+from web.models import get_user_conn
 
 despesas_bp = Blueprint("despesas", __name__)
 
@@ -23,10 +23,10 @@ def index():
     de = date.fromisoformat(de_str)
     ate = date.fromisoformat(ate_str)
 
-    store = get_store()
-    despesas = despesa_repo.listar_periodo(store, de, ate)
-    total, qtd = despesa_repo.total_periodo(store, de, ate)
-    por_categoria = despesa_repo.total_por_categoria(store, de, ate)
+    conn = get_user_conn()
+    despesas = despesa_repo.listar_periodo(conn, de, ate)
+    total, qtd = despesa_repo.total_periodo(conn, de, ate)
+    por_categoria = despesa_repo.total_por_categoria(conn, de, ate)
 
     return render_template(
         "despesas.html",
@@ -42,7 +42,7 @@ def index():
 @despesas_bp.route("/despesas/<int:despesa_id>/excluir", methods=["POST"])
 @login_required
 def excluir(despesa_id: int):
-    store = get_store()
-    despesa_service.excluir_despesa(store, despesa_id)
+    conn = get_user_conn()
+    despesa_service.excluir_despesa(conn, despesa_id)
     flash("Despesa excluída.", "success")
     return redirect(request.referrer or url_for("despesas.index"))

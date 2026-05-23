@@ -81,3 +81,9 @@ def get_store():
     from app.repositories.firestore_client import get_firestore_client
     from app.repositories.fs.store import BarberStore
     return BarberStore(db=get_firestore_client(), device_id=current_user.device_id)
+
+
+def get_user_conn():
+    """Retorna uma conexão SQLite para o banco de dados do usuário autenticado."""
+    from app.repositories.user_db import get_user_connection
+    return get_user_connection(current_user.device_id)
