@@ -196,7 +196,7 @@
       <!-- Formulário de despesa -->
       <div>
         <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Detalhes da despesa</p>
-        <form method="POST" action="{{ url_for('lancamento.registrar_despesa') }}" class="space-y-4">
+        <form id="form-despesa" method="POST" action="{{ url_for('lancamento.registrar_despesa') }}" class="space-y-4">
           <input type="hidden" name="item_frequente_id" id="item_id_input">
 
           <div>
@@ -258,12 +258,6 @@
 
 {% block scripts %}
 <script>
-// Exibe o status de sync nesta página
-document.addEventListener('DOMContentLoaded', () => {
-  const el = document.getElementById('sync-status');
-  if (el) el.classList.remove('hidden');
-});
-
 let servicoSelecionadoId = null;
 
 function showTab(tab) {
@@ -368,89 +362,96 @@ function preencherItem(catId, descricao, valor, itemId) {
   if (valor > 0) document.getElementById('valor_desp_input').value = (valor / 100).toFixed(2);
 }
 
-// ── Interceptação de forms: enfileira operações em vez de submeter ao servidor ──
+// ── Registro direto: fetch imediato, sem fila ──
 
-document.getElementById('form-atendimento').addEventListener('submit', function(e) {
+document.getElementById('form-atendimento').addEventListener('submit', async function(e) {
   e.preventDefault();
   const forma = document.getElementById('forma_input').value;
-  if (!forma) { FluxSync.showToast('Selecione a forma de pagamento.', 'error'); return; }
+  if (!forma) { FluxReg.showToast('Selecione a forma de pagamento.', 'error'); return; }
   const valor = document.getElementById('valor_input').value;
-  if (!valor || parseFloat(valor) <= 0) { FluxSync.showToast('Informe o valor.', 'error'); return; }
+  if (!valor || parseFloat(valor) <= 0) { FluxReg.showToast('Informe o valor.', 'error'); return; }
 
-  const data = this.querySelector('input[name="data"]').value;
-  const observacao = this.querySelector('input[name="observacao"]').value;
   const servicoNome = document.getElementById('confirm-servico-nome').textContent;
+  const btn = this.querySelector('button[type="submit"]');
 
-  FluxSync.enqueue('atendimento', {
+  const ok = await FluxReg.registrar('atendimento', {
     servico_id: document.getElementById('servico_id_input').value,
     valor,
     forma_pagamento: forma,
-    data,
-    observacao,
-  });
+    data: this.querySelector('input[name="data"]').value,
+    observacao: this.querySelector('input[name="observacao"]').value || null,
+  }, btn);
 
-  const valorFmt = 'R$ ' + parseFloat(valor).toFixed(2).replace('.', ',');
-  FluxSync.showToast(`${servicoNome} — ${valorFmt} — ${forma}`, 'success');
-  cancelarServico();
+  if (ok) {
+    const valorFmt = 'R$ ' + parseFloat(valor).toFixed(2).replace('.', ',');
+    FluxReg.showToast(`${servicoNome} — ${valorFmt} — ${forma}`, 'success');
+    cancelarServico();
+  } else {
+    FluxReg.showToast('Erro ao registrar. Verifique sua conexão.', 'error');
+  }
 });
 
-document.querySelector('form[action*="registrar_despesa"]').addEventListener('submit', function(e) {
+document.getElementById('form-despesa').addEventListener('submit', async function(e) {
   e.preventDefault();
   const forma = document.getElementById('forma_desp_input').value;
-  if (!forma) { FluxSync.showToast('Selecione a forma de pagamento.', 'error'); return; }
+  if (!forma) { FluxReg.showToast('Selecione a forma de pagamento.', 'error'); return; }
   const valor = document.getElementById('valor_desp_input').value;
-  if (!valor || parseFloat(valor) <= 0) { FluxSync.showToast('Informe o valor.', 'error'); return; }
+  if (!valor || parseFloat(valor) <= 0) { FluxReg.showToast('Informe o valor.', 'error'); return; }
   const descricao = document.getElementById('descricao_input').value.trim();
-  if (!descricao) { FluxSync.showToast('Informe a descricao da despesa.', 'error'); return; }
+  if (!descricao) { FluxReg.showToast('Informe a descricao.', 'error'); return; }
 
   const catSelect = document.getElementById('categoria_select');
-  const catNome = catSelect.options[catSelect.selectedIndex]?.text || '';
-  const data = this.querySelector('input[name="data"]').value;
-  const itemId = document.getElementById('item_id_input').value;
+  const btn = this.querySelector('button[type="submit"]');
 
-  FluxSync.enqueue('despesa', {
+  const ok = await FluxReg.registrar('despesa', {
     categoria_id: catSelect.value,
     descricao,
     valor,
     forma_pagamento: forma,
-    data,
-    item_frequente_id: itemId || null,
-  });
+    data: this.querySelector('input[name="data"]').value,
+    item_frequente_id: document.getElementById('item_id_input').value || null,
+  }, btn);
 
-  const valorFmt = 'R$ ' + parseFloat(valor).toFixed(2).replace('.', ',');
-  FluxSync.showToast(`${descricao} — ${valorFmt} — ${forma}`, 'success');
-
-  // Limpa form de despesa
-  document.getElementById('descricao_input').value = '';
-  document.getElementById('valor_desp_input').value = '';
-  document.getElementById('item_id_input').value = '';
-  document.getElementById('forma_desp_input').value = '';
-  document.querySelectorAll('.desp-forma-btn').forEach(b => {
-    b.classList.remove('border-brand', 'text-brand', 'bg-brand/10');
-    b.classList.add('border-gray-600', 'text-gray-400');
-  });
+  if (ok) {
+    const valorFmt = 'R$ ' + parseFloat(valor).toFixed(2).replace('.', ',');
+    FluxReg.showToast(`${descricao} — ${valorFmt} — ${forma}`, 'success');
+    document.getElementById('descricao_input').value = '';
+    document.getElementById('valor_desp_input').value = '';
+    document.getElementById('item_id_input').value = '';
+    document.getElementById('forma_desp_input').value = '';
+    document.querySelectorAll('.desp-forma-btn').forEach(b => {
+      b.classList.remove('border-brand', 'text-brand', 'bg-brand/10');
+      b.classList.add('border-gray-600', 'text-gray-400');
+    });
+  } else {
+    FluxReg.showToast('Erro ao registrar. Verifique sua conexão.', 'error');
+  }
 });
 
-document.getElementById('form-produto').addEventListener('submit', function(e) {
+document.getElementById('form-produto').addEventListener('submit', async function(e) {
   e.preventDefault();
-  const prodNome = document.getElementById('confirm-prod-nome').textContent;
   const quantidade = parseInt(document.getElementById('prod-qtd-display').value);
   const precoVenda = document.getElementById('prod-preco-display').value;
-  const data = this.querySelector('input[name="data"]').value;
+  if (!quantidade || quantidade < 1) { FluxReg.showToast('Quantidade invalida.', 'error'); return; }
+  if (!precoVenda || parseFloat(precoVenda) <= 0) { FluxReg.showToast('Preco invalido.', 'error'); return; }
 
-  if (!quantidade || quantidade < 1) { FluxSync.showToast('Quantidade invalida.', 'error'); return; }
-  if (!precoVenda || parseFloat(precoVenda) <= 0) { FluxSync.showToast('Preco invalido.', 'error'); return; }
+  const prodNome = document.getElementById('confirm-prod-nome').textContent;
+  const btn = this.querySelector('button[type="submit"]');
 
-  FluxSync.enqueue('venda_produto', {
+  const ok = await FluxReg.registrar('venda_produto', {
     produto_id: document.getElementById('prod-id-input').value,
     quantidade,
     preco_venda: precoVenda,
-    data,
-  });
+    data: this.querySelector('input[name="data"]').value,
+  }, btn);
 
-  const valorFmt = 'R$ ' + (parseFloat(precoVenda) * quantidade).toFixed(2).replace('.', ',');
-  FluxSync.showToast(`${quantidade}x ${prodNome} — ${valorFmt}`, 'success');
-  cancelarProduto();
+  if (ok) {
+    const valorFmt = 'R$ ' + (parseFloat(precoVenda) * quantidade).toFixed(2).replace('.', ',');
+    FluxReg.showToast(`${quantidade}x ${prodNome} — ${valorFmt}`, 'success');
+    cancelarProduto();
+  } else {
+    FluxReg.showToast('Erro ao registrar. Verifique sua conexão.', 'error');
+  }
 });
 </script>
 {% endblock %}
