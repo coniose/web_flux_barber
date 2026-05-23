@@ -258,6 +258,12 @@
 
 {% block scripts %}
 <script>
+// Exibe o status de sync nesta página
+document.addEventListener('DOMContentLoaded', () => {
+  const el = document.getElementById('sync-status');
+  if (el) el.classList.remove('hidden');
+});
+
 let servicoSelecionadoId = null;
 
 function showTab(tab) {
@@ -362,12 +368,89 @@ function preencherItem(catId, descricao, valor, itemId) {
   if (valor > 0) document.getElementById('valor_desp_input').value = (valor / 100).toFixed(2);
 }
 
-// Valida forma antes de submeter atendimento
+// ── Interceptação de forms: enfileira operações em vez de submeter ao servidor ──
+
 document.getElementById('form-atendimento').addEventListener('submit', function(e) {
-  if (!document.getElementById('forma_input').value) {
-    e.preventDefault();
-    alert('Selecione a forma de pagamento.');
-  }
+  e.preventDefault();
+  const forma = document.getElementById('forma_input').value;
+  if (!forma) { FluxSync.showToast('Selecione a forma de pagamento.', 'error'); return; }
+  const valor = document.getElementById('valor_input').value;
+  if (!valor || parseFloat(valor) <= 0) { FluxSync.showToast('Informe o valor.', 'error'); return; }
+
+  const data = this.querySelector('input[name="data"]').value;
+  const observacao = this.querySelector('input[name="observacao"]').value;
+  const servicoNome = document.getElementById('confirm-servico-nome').textContent;
+
+  FluxSync.enqueue('atendimento', {
+    servico_id: document.getElementById('servico_id_input').value,
+    valor,
+    forma_pagamento: forma,
+    data,
+    observacao,
+  });
+
+  const valorFmt = 'R$ ' + parseFloat(valor).toFixed(2).replace('.', ',');
+  FluxSync.showToast(`${servicoNome} — ${valorFmt} — ${forma}`, 'success');
+  cancelarServico();
+});
+
+document.querySelector('form[action*="registrar_despesa"]').addEventListener('submit', function(e) {
+  e.preventDefault();
+  const forma = document.getElementById('forma_desp_input').value;
+  if (!forma) { FluxSync.showToast('Selecione a forma de pagamento.', 'error'); return; }
+  const valor = document.getElementById('valor_desp_input').value;
+  if (!valor || parseFloat(valor) <= 0) { FluxSync.showToast('Informe o valor.', 'error'); return; }
+  const descricao = document.getElementById('descricao_input').value.trim();
+  if (!descricao) { FluxSync.showToast('Informe a descricao da despesa.', 'error'); return; }
+
+  const catSelect = document.getElementById('categoria_select');
+  const catNome = catSelect.options[catSelect.selectedIndex]?.text || '';
+  const data = this.querySelector('input[name="data"]').value;
+  const itemId = document.getElementById('item_id_input').value;
+
+  FluxSync.enqueue('despesa', {
+    categoria_id: catSelect.value,
+    descricao,
+    valor,
+    forma_pagamento: forma,
+    data,
+    item_frequente_id: itemId || null,
+  });
+
+  const valorFmt = 'R$ ' + parseFloat(valor).toFixed(2).replace('.', ',');
+  FluxSync.showToast(`${descricao} — ${valorFmt} — ${forma}`, 'success');
+
+  // Limpa form de despesa
+  document.getElementById('descricao_input').value = '';
+  document.getElementById('valor_desp_input').value = '';
+  document.getElementById('item_id_input').value = '';
+  document.getElementById('forma_desp_input').value = '';
+  document.querySelectorAll('.desp-forma-btn').forEach(b => {
+    b.classList.remove('border-brand', 'text-brand', 'bg-brand/10');
+    b.classList.add('border-gray-600', 'text-gray-400');
+  });
+});
+
+document.getElementById('form-produto').addEventListener('submit', function(e) {
+  e.preventDefault();
+  const prodNome = document.getElementById('confirm-prod-nome').textContent;
+  const quantidade = parseInt(document.getElementById('prod-qtd-display').value);
+  const precoVenda = document.getElementById('prod-preco-display').value;
+  const data = this.querySelector('input[name="data"]').value;
+
+  if (!quantidade || quantidade < 1) { FluxSync.showToast('Quantidade invalida.', 'error'); return; }
+  if (!precoVenda || parseFloat(precoVenda) <= 0) { FluxSync.showToast('Preco invalido.', 'error'); return; }
+
+  FluxSync.enqueue('venda_produto', {
+    produto_id: document.getElementById('prod-id-input').value,
+    quantidade,
+    preco_venda: precoVenda,
+    data,
+  });
+
+  const valorFmt = 'R$ ' + (parseFloat(precoVenda) * quantidade).toFixed(2).replace('.', ',');
+  FluxSync.showToast(`${quantidade}x ${prodNome} — ${valorFmt}`, 'success');
+  cancelarProduto();
 });
 </script>
 {% endblock %}

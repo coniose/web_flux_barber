@@ -87,6 +87,9 @@
          class="sidebar-item {% if request.endpoint and 'lancamento' in request.endpoint %}active{% endif %}">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
         Lançar
+        <span id="sync-indicator" class="hidden ml-auto">
+          <span id="sync-badge" class="text-[10px] font-bold bg-yellow-500 text-gray-900 rounded-full px-1.5 py-0.5 leading-none"></span>
+        </span>
       </a>
       <a href="{{ url_for('receitas.index') }}"
          class="sidebar-item {% if request.endpoint and 'receitas' in request.endpoint %}active{% endif %}">
@@ -172,6 +175,9 @@
 </div>
 {% endblock %}
 
+<script src="{{ url_for('static', filename='js/sync.js') }}"></script>
+<!-- Status de sync (visível apenas na página de lançamento) -->
+<span id="sync-status" class="hidden fixed bottom-3 right-3 text-xs text-gray-500 pointer-events-none"></span>
 {% block scripts %}{% endblock %}
 </body>
 </html>

@@ -8,7 +8,7 @@ from flask import Blueprint, flash, jsonify, redirect, render_template, request,
 from flask_login import login_required
 
 from app.repositories.fs import servico_repo, categoria_repo, item_frequente_repo, produto_repo
-from app.services import receita_service, despesa_service
+from app.services import receita_service, despesa_service, estoque_service
 from app.utils.validators import ValidacaoError
 from web.models import get_store
 
@@ -101,6 +101,61 @@ def registrar_despesa():
         flash(str(e), "error")
 
     return redirect(url_for("lancamento.index"))
+
+
+@lancamento_bp.route("/api/sync", methods=["POST"])
+@login_required
+def api_sync():
+    """Recebe lote de operações da fila offline do cliente e persiste no Firestore."""
+    store = get_store()
+    payload = request.get_json(silent=True) or {}
+    ops = payload.get("operations", [])
+    synced = []
+    failed = []
+
+    for op in ops:
+        op_id = op.get("id", "")
+        try:
+            tipo = op.get("type")
+            d = op.get("data", {})
+            data_obj = date.fromisoformat(d.get("data") or date.today().isoformat())
+
+            if tipo == "atendimento":
+                receita_service.registrar_atendimento_avulso(
+                    store,
+                    servico_id=int(d["servico_id"]),
+                    valor_centavos=round(float(d["valor"]) * 100),
+                    forma_pagamento=d["forma_pagamento"],
+                    data_atendimento=data_obj,
+                    observacao=d.get("observacao") or None,
+                )
+            elif tipo == "despesa":
+                despesa_service.registrar_despesa(
+                    store,
+                    categoria_id=int(d["categoria_id"]),
+                    descricao=d["descricao"],
+                    valor_centavos=round(float(d["valor"]) * 100),
+                    forma_pagamento=d["forma_pagamento"],
+                    data_despesa=data_obj,
+                    item_frequente_id=int(d["item_frequente_id"]) if d.get("item_frequente_id") else None,
+                )
+            elif tipo == "venda_produto":
+                estoque_service.registrar_venda(
+                    store,
+                    produto_id=int(d["produto_id"]),
+                    quantidade=int(d["quantidade"]),
+                    preco_venda_unitario=round(float(d["preco_venda"]) * 100),
+                    data_venda=data_obj,
+                )
+            else:
+                failed.append(op_id)
+                continue
+
+            synced.append(op_id)
+        except Exception:
+            failed.append(op_id)
+
+    return jsonify({"synced": synced, "failed": failed})
 
 
 @lancamento_bp.route("/api/servico/<int:servico_id>")
