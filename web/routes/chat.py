@@ -10,7 +10,7 @@ import anthropic
 from flask import Blueprint, abort, flash, jsonify, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 
-from app.repositories.sql import categoria_repo, produto_repo, servico_repo
+from app.repositories.sql import categoria_repo, movimentacao_repo, produto_repo, servico_repo
 from app.services import despesa_service, estoque_service, receita_service
 from app.utils.validators import ValidacaoError
 from web.extensions import limiter
@@ -98,7 +98,8 @@ _TOOLS = [
         "name": "registrar_venda_produto",
         "description": (
             "Registra a venda de um produto do estoque. "
-            "Use listar_produtos para obter o ID correto."
+            "Use listar_produtos para obter o ID correto. "
+            "Sempre pergunte o nome do cliente se não for informado."
         ),
         "input_schema": {
             "type": "object",
@@ -112,12 +113,38 @@ _TOOLS = [
                     "type": "integer",
                     "description": "Preço de venda unitário em centavos",
                 },
+                "cliente": {
+                    "type": "string",
+                    "description": "Nome do cliente que comprou (importante para o relatório do dia)",
+                },
                 "data": {
                     "type": "string",
                     "description": "Data no formato YYYY-MM-DD. Omitir para usar hoje.",
                 },
             },
             "required": ["produto_id", "quantidade", "preco_venda_unitario"],
+        },
+    },
+    {
+        "name": "gerar_relatorio_vendas",
+        "description": (
+            "Gera um relatório de vendas de produtos formatado e pronto para copiar e enviar via WhatsApp. "
+            "Use para fechamento do dia ou consulta de qualquer período."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "string",
+                    "description": "Data específica no formato YYYY-MM-DD. Omitir para usar hoje.",
+                },
+                "periodo": {
+                    "type": "string",
+                    "enum": ["hoje", "semana", "mes"],
+                    "description": "Período alternativo. Ignorado se 'data' for informada.",
+                },
+            },
+            "required": [],
         },
     },
     {
@@ -140,16 +167,19 @@ _TOOLS = [
 
 def _build_system_prompt() -> str:
     return (
-        f"Você é o assistente financeiro da barbearia Brodz. "
-        f"Seu trabalho é registrar atendimentos, despesas e vendas de forma conversacional — rápida e sem atrito.\n\n"
+        f"Você é um assistente financeiro pessoal. "
+        f"Seu trabalho é registrar vendas, despesas e serviços de forma conversacional — rápida e sem atrito.\n\n"
         f"Data de hoje: {date.today().isoformat()}\n\n"
         "Comportamento:\n"
-        "- Seja conciso. O barbeiro está ocupado.\n"
-        "- Após registrar, confirme com resumo formatado: "
-        "\"✓ [nome do serviço/despesa] — R$[valor] — [forma_pagamento]\"\n"
+        "- Seja conciso. O usuário está ocupado.\n"
+        "- Ao registrar uma venda de produto, sempre pergunte o nome do cliente se não foi informado — é essencial para o relatório do dia.\n"
+        "- Após registrar, confirme com resumo: \"✓ [produto/serviço] — R$[valor] — [cliente se houver]\"\n"
+        "- Se o usuário mencionar produto pelo nome, use listar_produtos para achar o ID antes de registrar.\n"
         "- Se o usuário mencionar serviço pelo nome, use listar_servicos para achar o ID antes de registrar.\n"
-        "- Interprete valores sempre em Reais (\"35 pix\" = R$35,00 = 3500 centavos).\n"
-        "- Para perguntas como \"quanto fiz hoje?\", use consultar_dashboard.\n"
+        "- Interprete valores sempre em Reais (\"150 pix\" = R$150,00 = 15000 centavos).\n"
+        "- Para \"quanto vendi hoje?\", \"resumo do dia\" ou similar, use consultar_dashboard.\n"
+        "- Para \"relatório do dia\", \"lista de vendas\", \"o que vendi hoje\" → use gerar_relatorio_vendas. "
+        "O relatório retornado já está formatado — reproduza-o exatamente, sem reformatar.\n"
         "- Se faltar dado essencial, peça apenas o que falta — sem perguntas longas.\n"
         "- Nunca invente IDs — sempre busque via listar_servicos, listar_categorias_despesa ou listar_produtos.\n"
         "- Formato de valores na resposta: sempre \"R$XX,XX\" com vírgula decimal."
@@ -213,8 +243,50 @@ def _execute_tool(name: str, inputs: dict) -> dict:
                 quantidade=inputs["quantidade"],
                 preco_venda_unitario=inputs["preco_venda_unitario"],
                 data_venda=data_obj,
+                observacao=inputs.get("cliente"),
             )
             return {"ok": True, "movimentacao_id": mov_id}
+
+        if name == "gerar_relatorio_vendas":
+            today = date.today()
+            data_str = inputs.get("data")
+            periodo = inputs.get("periodo", "hoje")
+
+            if data_str:
+                de = ate = date.fromisoformat(data_str)
+            elif periodo == "semana":
+                de = today - timedelta(days=today.weekday())
+                ate = today
+            elif periodo == "mes":
+                de = today.replace(day=1)
+                ate = today
+            else:
+                de = ate = today
+
+            movs = movimentacao_repo.listar_periodo(conn, de, ate, tipo="VENDA")
+
+            label = (
+                de.strftime("%d/%m/%Y")
+                if de == ate
+                else f"{de.strftime('%d/%m/%Y')} a {ate.strftime('%d/%m/%Y')}"
+            )
+
+            if not movs:
+                return {"relatorio": f"Nenhuma venda registrada em {label}."}
+
+            linhas = [f"Vendas de {label}\n"]
+            total = 0
+            for m in movs:
+                qtd = abs(m["quantidade"])
+                qtd_str = f" ×{qtd}" if qtd > 1 else ""
+                cliente_str = f" — {m['observacao']}" if m.get("observacao") else ""
+                valor_str = f"R${m['total_centavos'] / 100:.2f}".replace(".", ",")
+                linhas.append(f"• {m['produto_nome']}{qtd_str} — {valor_str}{cliente_str}")
+                total += m["total_centavos"]
+
+            total_str = f"R${total / 100:.2f}".replace(".", ",")
+            linhas.append(f"\nTotal: {total_str} | {len(movs)} venda(s)")
+            return {"relatorio": "\n".join(linhas)}
 
         if name == "consultar_dashboard":
             today = date.today()
