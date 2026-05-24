@@ -139,6 +139,28 @@ def ajustar_estoque(
     return mov_id
 
 
+def excluir_movimentacao(conn, *, mov_id: int) -> None:
+    mov = movimentacao_repo.obter(conn, mov_id)
+    if mov is None:
+        raise ValidacaoError("Movimentação não encontrada.")
+
+    produto = produto_repo.obter(conn, mov["produto_id"])
+    if produto is None:
+        raise ValidacaoError("Produto associado não encontrado.")
+
+    # Reverte o delta: COMPRA guardou +N, VENDA guardou -N, AJUSTE guardou delta
+    delta_reverso = -mov["quantidade"]
+
+    nova_qtd = produto["quantidade_estoque"] + delta_reverso
+    if nova_qtd < 0:
+        raise ValidacaoError(
+            f"Não é possível excluir: o estoque de '{produto['nome']}' ficaria negativo ({nova_qtd})."
+        )
+
+    movimentacao_repo.excluir(conn, mov_id)
+    produto_repo.ajustar_quantidade(conn, mov["produto_id"], delta_reverso)
+
+
 def resumo_periodo(conn, de: date, ate: date) -> dict:
     totais = movimentacao_repo.totais_periodo(conn, de, ate)
     ranking = movimentacao_repo.ranking_produtos(conn, de, ate, limite=5)

@@ -139,6 +139,7 @@
           <th class="px-4 py-3 text-right">Qtd</th>
           <th class="px-4 py-3 text-right">Unit.</th>
           <th class="px-4 py-3 text-right">Total</th>
+          <th class="px-4 py-3"></th>
         </tr>
       </thead>
       <tbody class="divide-y divide-gray-700/50">
@@ -159,6 +160,17 @@
           <td class="px-4 py-3 text-right font-medium
             {% if m['tipo'] == 'VENDA' %}text-emerald-400{% elif m['tipo'] == 'COMPRA' %}text-red-400{% else %}text-gray-400{% endif %}">
             R$ {{ "%.2f"|format(m['total_centavos'] / 100) }}
+          </td>
+          <td class="px-4 py-3 text-center">
+            <form method="POST" action="{{ url_for('estoque.excluir_movimentacao', mov_id=m['id']) }}"
+                  onsubmit="return confirm('Excluir esta movimentação? O estoque será revertido.')">
+              <button type="submit" class="text-gray-600 hover:text-red-400 transition-colors" title="Excluir">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                </svg>
+              </button>
+            </form>
           </td>
         </tr>
         {% endfor %}

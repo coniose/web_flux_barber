@@ -40,6 +40,18 @@ def inserir(
     return cur.lastrowid
 
 
+def obter(conn: sqlite3.Connection, mov_id: int) -> Optional[dict]:
+    row = conn.execute(
+        "SELECT * FROM movimentacao_estoque WHERE id = ?", (mov_id,)
+    ).fetchone()
+    return dict(row) if row else None
+
+
+def excluir(conn: sqlite3.Connection, mov_id: int) -> bool:
+    cur = conn.execute("DELETE FROM movimentacao_estoque WHERE id = ?", (mov_id,))
+    return cur.rowcount > 0
+
+
 def listar_periodo(
     conn: sqlite3.Connection,
     de: date | str,

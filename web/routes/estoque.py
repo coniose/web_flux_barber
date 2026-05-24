@@ -115,6 +115,18 @@ def ajustar():
     return redirect(url_for("estoque.index"))
 
 
+@estoque_bp.route("/estoque/movimentacao/<int:mov_id>/excluir", methods=["POST"])
+@login_required
+def excluir_movimentacao(mov_id: int):
+    conn = get_user_conn()
+    try:
+        estoque_service.excluir_movimentacao(conn, mov_id=mov_id)
+        flash("Movimentação excluída e estoque revertido.", "success")
+    except (ValidacaoError, ValueError) as e:
+        flash(str(e), "error")
+    return redirect(url_for("estoque.index"))
+
+
 @estoque_bp.route("/estoque/editar", methods=["POST"])
 @login_required
 def editar_produto():
