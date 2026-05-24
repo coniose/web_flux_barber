@@ -9,6 +9,7 @@ from flask import Blueprint, current_app, flash, redirect, render_template, requ
 from flask_login import current_user, login_required
 
 from app.repositories.db import get_connection
+from web.extensions import csrf
 
 billing_bp = Blueprint("billing", __name__)
 
@@ -100,6 +101,7 @@ def portal():
 # ── Webhook ───────────────────────────────────────────────────────────────────
 
 @billing_bp.route("/billing/webhook", methods=["POST"])
+@csrf.exempt
 def webhook():
     payload = request.get_data()
     sig = request.headers.get("Stripe-Signature", "")

@@ -27,6 +27,7 @@
   <!-- Aba Atendimento -->
   <div id="panel-atendimento">
     <form method="POST" action="{{ url_for('lancamento.registrar_atendimento') }}" id="form-atendimento">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <input type="hidden" name="servico_id" id="servico_id_input">
       <input type="hidden" name="valor" id="valor_input">
       <input type="hidden" name="forma_pagamento" id="forma_input">
@@ -106,6 +107,7 @@
   <!-- Aba Produto -->
   <div id="panel-produto" class="hidden">
     <form method="POST" action="{{ url_for('estoque.registrar_venda') }}" id="form-produto">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <input type="hidden" name="produto_id" id="prod-id-input">
       <input type="hidden" name="preco_venda" id="prod-preco-input">
 
@@ -197,6 +199,7 @@
       <div>
         <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Detalhes da despesa</p>
         <form id="form-despesa" method="POST" action="{{ url_for('lancamento.registrar_despesa') }}" class="space-y-4">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <input type="hidden" name="item_frequente_id" id="item_id_input">
 
           <div>

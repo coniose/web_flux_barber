@@ -20,6 +20,7 @@
   {# ── Negócio ────────────────────────────────────────────────────────────── #}
   {% if tab == 'negocio' %}
   <form method="POST" action="{{ url_for('config.negocio_update') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <div class="grid lg:grid-cols-2 gap-6">
 
       <!-- Identidade -->
@@ -136,6 +137,7 @@
                 Editar
               </button>
               <form method="POST" action="{{ url_for('config.servico_toggle', sid=s['id']) }}" class="inline">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <button type="submit" class="text-xs px-2 py-1 rounded transition-colors
                   {{ 'bg-red-500/15 text-red-400 hover:bg-red-500/25' if s['ativo'] else 'bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25' }}">
                   {{ 'Desativar' if s['ativo'] else 'Ativar' }}
@@ -190,6 +192,7 @@
                 Editar
               </button>
               <form method="POST" action="{{ url_for('config.categoria_toggle', cid=c['id']) }}" class="inline">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <button type="submit" class="text-xs px-2 py-1 rounded transition-colors
                   {{ 'bg-red-500/15 text-red-400 hover:bg-red-500/25' if c['ativo'] else 'bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25' }}">
                   {{ 'Desativar' if c['ativo'] else 'Ativar' }}
@@ -250,6 +253,7 @@
                 Editar
               </button>
               <form method="POST" action="{{ url_for('config.item_toggle', iid=i['id']) }}" class="inline">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <button type="submit" class="text-xs px-2 py-1 rounded transition-colors
                   {{ 'bg-red-500/15 text-red-400 hover:bg-red-500/25' if i['ativo'] else 'bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25' }}">
                   {{ 'Desativar' if i['ativo'] else 'Ativar' }}
@@ -308,6 +312,7 @@
                 Editar
               </button>
               <form method="POST" action="{{ url_for('config.produto_toggle', pid=p['id']) }}" class="inline">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <button type="submit" class="text-xs px-2 py-1 rounded transition-colors
                   {{ 'bg-red-500/15 text-red-400 hover:bg-red-500/25' if p['ativo'] else 'bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25' }}">
                   {{ 'Desativar' if p['ativo'] else 'Ativar' }}
@@ -331,6 +336,7 @@
     <div class="bg-gray-800 border border-gray-700 rounded-xl p-6">
       <h3 class="text-sm font-semibold text-white mb-5">Dados da conta</h3>
       <form method="POST" action="{{ url_for('config.conta_update') }}" class="space-y-4">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <div>
           <label class="block text-xs font-medium text-gray-400 mb-1.5">Nome</label>
           <input type="text" name="nome" value="{{ current_user.nome }}" required
@@ -357,6 +363,7 @@
     <div class="bg-gray-800 border border-gray-700 rounded-xl p-6">
       <h3 class="text-sm font-semibold text-white mb-5">Alterar senha</h3>
       <form method="POST" action="{{ url_for('config.conta_senha') }}" class="space-y-4">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <div>
           <label class="block text-xs font-medium text-gray-400 mb-1.5">Senha atual</label>
           <input type="password" name="senha_atual" required autocomplete="current-password"
@@ -391,6 +398,7 @@
   <div class="bg-gray-800 border border-gray-700 rounded-2xl p-6 w-full max-w-md">
     <h3 class="text-base font-semibold text-white mb-5" id="srv-titulo">Novo Serviço</h3>
     <form method="POST" id="form-servico" class="space-y-4">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <div>
         <label class="block text-xs font-medium text-gray-400 mb-1.5">Nome</label>
         <input type="text" name="nome" id="srv-nome" required
@@ -432,6 +440,7 @@
   <div class="bg-gray-800 border border-gray-700 rounded-2xl p-6 w-full max-w-sm">
     <h3 class="text-base font-semibold text-white mb-5" id="cat-titulo">Nova Categoria</h3>
     <form method="POST" id="form-cat" class="space-y-4">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <div>
         <label class="block text-xs font-medium text-gray-400 mb-1.5">Nome</label>
         <input type="text" name="nome" id="cat-nome" required
@@ -461,6 +470,7 @@
   <div class="bg-gray-800 border border-gray-700 rounded-2xl p-6 w-full max-w-md">
     <h3 class="text-base font-semibold text-white mb-5" id="item-titulo">Novo Item</h3>
     <form method="POST" id="form-item" class="space-y-4">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <div>
         <label class="block text-xs font-medium text-gray-400 mb-1.5">Descrição</label>
         <input type="text" name="descricao" id="item-descricao" required
@@ -501,6 +511,7 @@
   <div class="bg-gray-800 border border-gray-700 rounded-2xl p-6 w-full max-w-md">
     <h3 class="text-base font-semibold text-white mb-5">Editar Produto</h3>
     <form method="POST" id="form-produto" class="space-y-4">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <div>
         <label class="block text-xs font-medium text-gray-400 mb-1.5">Nome</label>
         <input type="text" name="nome" id="prod-nome" required

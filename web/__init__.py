@@ -48,7 +48,12 @@ def create_app(test_config: dict | None = None) -> Flask:
     _activate_pro_from_env(conn)
     conn.close()
 
-    from web.extensions import limiter
+    app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+    app.config["SESSION_COOKIE_SECURE"] = True
+    app.config["SESSION_COOKIE_HTTPONLY"] = True
+
+    from web.extensions import csrf, limiter
+    csrf.init_app(app)
     limiter.init_app(app)
 
     login_manager.init_app(app)
