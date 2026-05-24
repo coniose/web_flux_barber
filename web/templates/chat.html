@@ -6,16 +6,31 @@
 <div class="flex flex-col h-full" style="height: calc(100vh - 9rem);">
 
   <!-- Cabeçalho -->
-  <div class="mb-4 flex items-center gap-3">
-    <div class="w-9 h-9 rounded-xl bg-brand/20 border border-brand/40 flex items-center justify-center">
-      <svg class="w-5 h-5 text-brand" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-          d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
-      </svg>
+  <div class="mb-4 flex items-center justify-between gap-3">
+    <div class="flex items-center gap-3">
+      <div class="w-9 h-9 rounded-xl bg-brand/20 border border-brand/40 flex items-center justify-center shrink-0">
+        <svg class="w-5 h-5 text-brand" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
+        </svg>
+      </div>
+      <div>
+        <h1 class="text-white font-semibold text-base leading-none">Assistente IA</h1>
+        <p class="text-gray-500 text-xs mt-0.5">Registre atendimentos, despesas e vendas por texto</p>
+      </div>
     </div>
-    <div>
-      <h1 class="text-white font-semibold text-base leading-none">Assistente Brodz</h1>
-      <p class="text-gray-500 text-xs mt-0.5">Registre atendimentos, despesas e vendas por texto</p>
+
+    <!-- Barra de consumo diário -->
+    <div class="hidden sm:flex flex-col items-end gap-1 shrink-0">
+      <div class="flex items-center gap-2">
+        <span class="text-xs text-gray-500">Uso hoje</span>
+        <span id="consumo-pct" class="text-xs font-medium text-gray-400">0%</span>
+      </div>
+      <div class="w-32 h-1.5 bg-gray-700 rounded-full overflow-hidden">
+        <div id="consumo-bar"
+             class="h-full rounded-full transition-all duration-500"
+             style="width: 0%; background-color: #10b981;"></div>
+      </div>
     </div>
   </div>
 
@@ -77,6 +92,36 @@
   const inputEl    = document.getElementById('input');
   const sendBtn    = document.getElementById('send-btn');
   const STORAGE_KEY = 'flux_chat_history';
+
+  // Consumo de tokens — inicializado com valor do servidor (sem requisição extra)
+  const CONSUMO_LIMITE = {{ consumo_limite }};
+  let consumoTokensHoje = {{ consumo_tokens_hoje }};
+
+  function atualizarBarraConsumo(tokensHoje) {
+    consumoTokensHoje = tokensHoje;
+    const pct = Math.min(tokensHoje / CONSUMO_LIMITE * 100, 100);
+    const bar = document.getElementById('consumo-bar');
+    const label = document.getElementById('consumo-pct');
+    if (!bar || !label) return;
+
+    bar.style.width = pct.toFixed(1) + '%';
+    label.textContent = pct.toFixed(0) + '%';
+
+    // Cor progressiva: verde → amarelo → vermelho
+    if (pct >= 90) {
+      bar.style.backgroundColor = '#ef4444'; // vermelho
+      label.className = 'text-xs font-medium text-red-400';
+    } else if (pct >= 70) {
+      bar.style.backgroundColor = '#f59e0b'; // amarelo
+      label.className = 'text-xs font-medium text-yellow-400';
+    } else {
+      bar.style.backgroundColor = '#10b981'; // verde
+      label.className = 'text-xs font-medium text-gray-400';
+    }
+  }
+
+  // Inicializa barra com valor carregado do servidor
+  atualizarBarraConsumo(consumoTokensHoje);
 
   // Histórico de mensagens para a API
   let history = [];
@@ -204,6 +249,11 @@
       } else {
         const reply = data.response;
         appendMessage('assistant', reply);
+
+        // Atualiza barra de consumo com dado da resposta (sem requisição extra)
+        if (data.consumo) {
+          atualizarBarraConsumo(data.consumo.tokens_hoje);
+        }
 
         // Atualiza histórico e persiste na sessão
         history.push({ role: 'user', content: text });

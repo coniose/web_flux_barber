@@ -544,7 +544,6 @@ def _run_agentic_loop(messages: list[dict], user_id: int) -> str:
 @chat_bp.route("/chat")
 @login_required
 def index():
-    # Verifica assinatura no Stripe se a última checagem foi há mais de 12h
     if current_user.is_pro:
         from web.routes.billing import verificar_plano_stripe
         if verificar_plano_stripe(current_user):
@@ -554,7 +553,16 @@ def index():
     if not current_user.is_pro:
         flash("O assistente de IA é exclusivo do plano Pro.", "info")
         return redirect(url_for("lancamento.index"))
-    return render_template("chat.html")
+
+    auth_conn = get_connection()
+    tokens_hoje = consumo_repo.get_tokens_hoje(auth_conn, current_user.id)
+    auth_conn.close()
+
+    return render_template(
+        "chat.html",
+        consumo_tokens_hoje=tokens_hoje,
+        consumo_limite=consumo_repo.LIMITE_TOKENS_DIA_PRO,
+    )
 
 
 @chat_bp.route("/api/chat", methods=["POST"])
@@ -581,4 +589,15 @@ def api_chat():
     except Exception as e:
         return jsonify({"error": f"Erro interno: {e}"}), 500
 
-    return jsonify({"response": response_text})
+    auth_conn = get_connection()
+    tokens_hoje = consumo_repo.get_tokens_hoje(auth_conn, current_user.id)
+    auth_conn.close()
+
+    return jsonify({
+        "response": response_text,
+        "consumo": {
+            "tokens_hoje": tokens_hoje,
+            "limite": consumo_repo.LIMITE_TOKENS_DIA_PRO,
+            "percentual": round(tokens_hoje / consumo_repo.LIMITE_TOKENS_DIA_PRO * 100, 1),
+        },
+    })
