@@ -8,7 +8,7 @@
 
   <!-- Tab nav -->
   <div class="flex gap-1 bg-gray-800 rounded-xl p-1 border border-gray-700 overflow-x-auto">
-    {% for t, label in [('servicos','Serviços'),('categorias','Categorias'),('itens','Itens'),('produtos','Produtos'),('conta','Conta')] %}
+    {% for t, label in [('negocio','Negócio'),('servicos','Serviços'),('categorias','Categorias'),('itens','Itens'),('produtos','Produtos'),('conta','Conta')] %}
     <a href="{{ url_for('config.index', tab=t) }}"
        class="px-4 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap
               {{ 'text-white bg-gray-700' if tab == t else 'text-gray-400 hover:text-white' }}">
@@ -16,6 +16,83 @@
     </a>
     {% endfor %}
   </div>
+
+  {# ── Negócio ────────────────────────────────────────────────────────────── #}
+  {% if tab == 'negocio' %}
+  <form method="POST" action="{{ url_for('config.negocio_update') }}">
+    <div class="grid lg:grid-cols-2 gap-6">
+
+      <!-- Identidade -->
+      <div class="bg-gray-800 border border-gray-700 rounded-xl p-6 space-y-5">
+        <h3 class="text-sm font-semibold text-white">Identidade do negócio</h3>
+        <div>
+          <label class="block text-xs font-medium text-gray-400 mb-1.5">Nome do negócio</label>
+          <input type="text" name="nome_negocio" required value="{{ negocio.nome_negocio }}"
+                 class="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2.5 text-white text-sm focus:ring-2 focus:ring-brand focus:outline-none">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-gray-400 mb-1.5">Descrição / segmento</label>
+          <textarea name="descricao_negocio" rows="3"
+                    placeholder="O que você vende ou faz…"
+                    class="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2.5 text-white text-sm focus:ring-2 focus:ring-brand focus:outline-none resize-none">{{ negocio.descricao_negocio }}</textarea>
+          <p class="text-xs text-gray-500 mt-1">Usado pelo assistente de IA para personalizar as respostas.</p>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-gray-400 mb-1.5">Horário de funcionamento</label>
+          <input type="text" name="horario_trabalho" value="{{ negocio.horario_trabalho }}"
+                 placeholder="Ex: Seg–Sáb, 9h às 19h"
+                 class="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2.5 text-white text-sm focus:ring-2 focus:ring-brand focus:outline-none">
+        </div>
+      </div>
+
+      <!-- O que registra + Pagamentos -->
+      <div class="space-y-6">
+        <div class="bg-gray-800 border border-gray-700 rounded-xl p-6 space-y-3">
+          <h3 class="text-sm font-semibold text-white">O que você registra</h3>
+          {% for val, label, desc in [
+            ('servicos', 'Serviços', 'Cortes, consultas, aulas, reparos…'),
+            ('produtos', 'Produtos', 'Revenda, games, cosméticos…'),
+            ('ambos', 'Serviços e produtos', 'Atendimento + venda de itens físicos'),
+          ] %}
+          <label class="flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors
+                        {{ 'border-brand bg-brand/10' if negocio.tipo_trabalho == val else 'border-gray-700 hover:border-gray-500' }}">
+            <input type="radio" name="tipo_trabalho" value="{{ val }}"
+                   {{ 'checked' if negocio.tipo_trabalho == val else '' }}
+                   class="mt-0.5 accent-emerald-500 shrink-0">
+            <span>
+              <span class="block text-sm font-medium text-white">{{ label }}</span>
+              <span class="block text-xs text-gray-400">{{ desc }}</span>
+            </span>
+          </label>
+          {% endfor %}
+        </div>
+
+        <div class="bg-gray-800 border border-gray-700 rounded-xl p-6 space-y-3">
+          <h3 class="text-sm font-semibold text-white">Formas de pagamento aceitas</h3>
+          <div class="flex flex-wrap gap-2">
+            {% for val, label in [('PIX','PIX'),('DINHEIRO','Dinheiro'),('MAQUININHA','Maquininha')] %}
+            <label class="flex items-center gap-2 px-4 py-2 rounded-full border cursor-pointer transition-colors
+                          {{ 'border-brand bg-brand/10 text-brand' if val in negocio.formas_pagamento else 'border-gray-600 text-gray-400 hover:border-gray-400' }}">
+              <input type="checkbox" name="formas_pagamento" value="{{ val }}"
+                     {{ 'checked' if val in negocio.formas_pagamento else '' }}
+                     class="accent-emerald-500">
+              <span class="text-sm font-medium">{{ label }}</span>
+            </label>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="mt-4 flex justify-end">
+      <button type="submit"
+              class="px-6 py-2.5 text-sm font-semibold rounded-lg bg-brand hover:bg-emerald-600 text-white transition-colors">
+        Salvar alterações
+      </button>
+    </div>
+  </form>
+  {% endif %}
 
   {# ── Serviços ───────────────────────────────────────────────────────────── #}
   {% if tab == 'servicos' %}

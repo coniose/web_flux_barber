@@ -77,6 +77,7 @@ def create_app(test_config: dict | None = None) -> Flask:
     from web.routes.lancamento import lancamento_bp
     from web.routes.receitas import receitas_bp
     from web.routes.config import config_bp
+    from web.routes.setup import setup_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(billing_bp)
@@ -87,8 +88,60 @@ def create_app(test_config: dict | None = None) -> Flask:
     app.register_blueprint(despesas_bp)
     app.register_blueprint(estoque_bp)
     app.register_blueprint(config_bp)
+    app.register_blueprint(setup_bp)
+
+    _register_onboarding_gate(app)
+    _register_context_processors(app)
 
     return app
+
+
+def _register_context_processors(app) -> None:
+    from flask_login import current_user
+
+    @app.context_processor
+    def inject_negocio():
+        if not current_user.is_authenticated:
+            return {"nome_negocio": "Flux"}
+        try:
+            from app.repositories.sql import config_repo
+            from web.models import get_user_conn
+            conn = get_user_conn()
+            nome = config_repo.get_config(conn, "nome_negocio") or "Flux"
+            conn.close()
+        except Exception:
+            nome = "Flux"
+        return {"nome_negocio": nome}
+
+
+def _register_onboarding_gate(app) -> None:
+    """Redireciona usuários autenticados sem onboarding para /setup."""
+    from flask import redirect, request, url_for
+    from flask_login import current_user
+
+    @app.before_request
+    def gate_onboarding():
+        # Só se aplica a usuários logados
+        if not current_user.is_authenticated:
+            return None
+
+        # Rotas que não precisam do onboarding completo
+        endpoint = request.endpoint or ""
+        if (
+            endpoint.startswith("auth.")
+            or endpoint.startswith("setup.")
+            or endpoint.startswith("static")
+            or endpoint.startswith("billing.")
+        ):
+            return None
+
+        from app.repositories.sql import config_repo
+        from web.models import get_user_conn
+        conn = get_user_conn()
+        completo = config_repo.get_config(conn, "onboarding_completo")
+        conn.close()
+        if not completo:
+            return redirect(url_for("setup.index"))
 
 
 def _seed_demo_user(conn) -> None:
@@ -100,16 +153,40 @@ def _seed_demo_user(conn) -> None:
     DEMO_NOME = "Demo Dev"
     DEMO_SENHA = "90901010"
 
-    row = conn.execute("SELECT id, plano FROM usuario WHERE email = ?", (DEMO_EMAIL,)).fetchone()
+    row = conn.execute("SELECT id, plano, device_id FROM usuario WHERE email = ?", (DEMO_EMAIL,)).fetchone()
     if row:
         if row["plano"] != "pro":
             conn.execute("UPDATE usuario SET plano = 'pro' WHERE email = ?", (DEMO_EMAIL,))
-        return
+        if not row["device_id"]:
+            device_id = _uuid.uuid4().hex
+            conn.execute("UPDATE usuario SET device_id = ? WHERE email = ?", (device_id, DEMO_EMAIL))
+        else:
+            device_id = row["device_id"]
+    else:
+        device_id = _uuid.uuid4().hex
+        conn.execute(
+            "INSERT INTO usuario (email, nome, senha_hash, device_id, plano) VALUES (?, ?, ?, ?, ?)",
+            (DEMO_EMAIL, DEMO_NOME, generate_password_hash(DEMO_SENHA), device_id, "pro"),
+        )
 
-    conn.execute(
-        "INSERT INTO usuario (email, nome, senha_hash, device_id, plano) VALUES (?, ?, ?, ?, ?)",
-        (DEMO_EMAIL, DEMO_NOME, generate_password_hash(DEMO_SENHA), _uuid.uuid4().hex, "pro"),
-    )
+    _seed_demo_onboarding(device_id)
+
+
+def _seed_demo_onboarding(device_id: str) -> None:
+    """Garante que o onboarding do demo user esteja completo."""
+    from app.repositories.sql import config_repo
+    from app.repositories.user_db import get_user_connection
+    try:
+        user_conn = get_user_connection(device_id)
+        if not config_repo.get_config(user_conn, "onboarding_completo"):
+            config_repo.set_config(user_conn, "nome_negocio", "Demo Dev")
+            config_repo.set_config(user_conn, "descricao_negocio", "Conta de demonstração do sistema.")
+            config_repo.set_config(user_conn, "tipo_trabalho", "ambos")
+            config_repo.set_config(user_conn, "formas_pagamento", "PIX,DINHEIRO,MAQUININHA")
+            config_repo.set_config(user_conn, "onboarding_completo", "1")
+        user_conn.close()
+    except Exception:
+        pass  # não bloqueia o boot se o DB de usuário falhar
 
 
 def _ensure_usuario_table(conn) -> None:
@@ -136,6 +213,18 @@ def _ensure_usuario_table(conn) -> None:
             tipo          TEXT NOT NULL,
             processado_em TEXT NOT NULL DEFAULT (datetime('now'))
         );
+    """)
+    # Rastreamento de consumo de tokens por usuário
+    conn.executescript("""
+        CREATE TABLE IF NOT EXISTS consumo_chat (
+            id             INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id        INTEGER NOT NULL,
+            data           TEXT    NOT NULL,
+            tokens_entrada INTEGER NOT NULL DEFAULT 0,
+            tokens_saida   INTEGER NOT NULL DEFAULT 0,
+            criado_em      TEXT    NOT NULL DEFAULT (datetime('now'))
+        );
+        CREATE INDEX IF NOT EXISTS idx_consumo_user_data ON consumo_chat(user_id, data);
     """)
     # Migrações incrementais para bancos existentes
     for migration in [
