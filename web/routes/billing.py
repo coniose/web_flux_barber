@@ -134,6 +134,15 @@ def webhook():
             )
         elif etype == "customer.subscription.deleted":
             _desativar_pro(conn=conn, subscription_id=data.get("id"))
+        elif etype == "invoice.payment_failed":
+            # Marca o usuário para que na próxima verificação de plano
+            # o Stripe seja consultado e o downgrade ocorra se necessário
+            _marcar_verificacao_pendente(conn=conn, customer_id=data.get("customer"))
+            current_app.logger.warning(
+                "Pagamento falhou para customer %s (tentativa %s)",
+                data.get("customer"),
+                data.get("attempt_count"),
+            )
 
         conn.execute(
             "INSERT OR IGNORE INTO stripe_events (event_id, tipo) VALUES (?, ?)",
@@ -159,6 +168,16 @@ def _ativar_pro(conn, user_id, customer_id, subscription_id):
                plano_verificado_em = datetime('now')
            WHERE id = ?""",
         (customer_id, subscription_id, int(user_id)),
+    )
+
+
+def _marcar_verificacao_pendente(conn, customer_id):
+    """Zera plano_verificado_em para forçar checagem no próximo login."""
+    if not customer_id:
+        return
+    conn.execute(
+        "UPDATE usuario SET plano_verificado_em = NULL WHERE stripe_customer_id = ?",
+        (customer_id,),
     )
 
 
