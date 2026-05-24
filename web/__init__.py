@@ -100,10 +100,12 @@ def _seed_demo_user(conn) -> None:
     DEMO_NOME = "Demo Dev"
     DEMO_SENHA = "90901010"
 
-    row = conn.execute("SELECT id, plano FROM usuario WHERE email = ?", (DEMO_EMAIL,)).fetchone()
+    row = conn.execute("SELECT id, plano, device_id FROM usuario WHERE email = ?", (DEMO_EMAIL,)).fetchone()
     if row:
         if row["plano"] != "pro":
             conn.execute("UPDATE usuario SET plano = 'pro' WHERE email = ?", (DEMO_EMAIL,))
+        if not row["device_id"]:
+            conn.execute("UPDATE usuario SET device_id = ? WHERE email = ?", (_uuid.uuid4().hex, DEMO_EMAIL))
         return
 
     conn.execute(
