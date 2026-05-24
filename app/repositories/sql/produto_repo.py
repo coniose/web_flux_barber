@@ -87,6 +87,13 @@ def atualizar(
 
     params.append(produto_id)
     conn.execute(f"UPDATE produto SET {', '.join(sets)} WHERE id = ?", params)
+
+    if nome is not None:
+        conn.execute(
+            "UPDATE movimentacao_estoque SET produto_nome = ? WHERE produto_id = ?",
+            (nome.strip(), produto_id),
+        )
+
     return True
 
 
