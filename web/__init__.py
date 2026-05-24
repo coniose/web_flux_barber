@@ -214,6 +214,18 @@ def _ensure_usuario_table(conn) -> None:
             processado_em TEXT NOT NULL DEFAULT (datetime('now'))
         );
     """)
+    # Rastreamento de consumo de tokens por usuário
+    conn.executescript("""
+        CREATE TABLE IF NOT EXISTS consumo_chat (
+            id             INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id        INTEGER NOT NULL,
+            data           TEXT    NOT NULL,
+            tokens_entrada INTEGER NOT NULL DEFAULT 0,
+            tokens_saida   INTEGER NOT NULL DEFAULT 0,
+            criado_em      TEXT    NOT NULL DEFAULT (datetime('now'))
+        );
+        CREATE INDEX IF NOT EXISTS idx_consumo_user_data ON consumo_chat(user_id, data);
+    """)
     # Migrações incrementais para bancos existentes
     for migration in [
         "ALTER TABLE usuario ADD COLUMN device_id TEXT",

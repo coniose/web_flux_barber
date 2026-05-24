@@ -10,6 +10,8 @@ import anthropic
 from flask import Blueprint, abort, flash, jsonify, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 
+from app.repositories import consumo_repo
+from app.repositories.db import get_connection
 from app.repositories.sql import categoria_repo, config_repo, item_frequente_repo, movimentacao_repo, produto_repo, servico_repo
 from app.services import despesa_service, estoque_service, receita_service
 from app.utils.validators import ValidacaoError
@@ -459,55 +461,79 @@ def _execute_tool(name: str, inputs: dict) -> dict:
         return {"error": f"Erro interno: {e}"}
 
 
-def _run_agentic_loop(messages: list[dict]) -> str:
-    client = anthropic.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY", ""))
+def _run_agentic_loop(messages: list[dict], user_id: int) -> str:
+    auth_conn = get_connection()
 
-    for _ in range(30):  # limite generoso para suportar importações em massa
-        response = client.messages.create(
-            model="claude-sonnet-4-6",
-            max_tokens=4096,
-            system=_build_system_prompt(),
-            tools=_TOOLS,
-            messages=messages,
+    # Verifica cota diária antes de iniciar
+    tokens_hoje = consumo_repo.get_tokens_hoje(auth_conn, user_id)
+    if tokens_hoje >= consumo_repo.LIMITE_TOKENS_DIA_PRO:
+        auth_conn.close()
+        usado_k = tokens_hoje // 1000
+        limite_k = consumo_repo.LIMITE_TOKENS_DIA_PRO // 1000
+        return (
+            f"Você atingiu o limite diário de uso do assistente ({usado_k}k/{limite_k}k tokens). "
+            "O limite é renovado à meia-noite. "
+            "Se precisar de mais capacidade, entre em contato com o suporte."
         )
 
-        if response.stop_reason == "end_turn":
-            text_blocks = [b for b in response.content if b.type == "text"]
-            return text_blocks[0].text if text_blocks else "(sem resposta)"
+    client = anthropic.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY", ""))
+    tokens_entrada_total = 0
+    tokens_saida_total = 0
 
-        if response.stop_reason == "tool_use":
-            tool_use_blocks = [b for b in response.content if b.type == "tool_use"]
+    try:
+        for _ in range(30):  # limite generoso para suportar importações em massa
+            response = client.messages.create(
+                model="claude-sonnet-4-6",
+                max_tokens=4096,
+                system=_build_system_prompt(),
+                tools=_TOOLS,
+                messages=messages,
+            )
 
-            # Adiciona resposta do assistente (com tool_use) ao histórico
-            assistant_content = []
-            for b in response.content:
-                if b.type == "text":
-                    assistant_content.append({"type": "text", "text": b.text})
-                elif b.type == "tool_use":
-                    assistant_content.append(
-                        {"type": "tool_use", "id": b.id, "name": b.name, "input": b.input}
+            tokens_entrada_total += response.usage.input_tokens
+            tokens_saida_total += response.usage.output_tokens
+
+            if response.stop_reason == "end_turn":
+                text_blocks = [b for b in response.content if b.type == "text"]
+                return text_blocks[0].text if text_blocks else "(sem resposta)"
+
+            if response.stop_reason == "tool_use":
+                tool_use_blocks = [b for b in response.content if b.type == "tool_use"]
+
+                assistant_content = []
+                for b in response.content:
+                    if b.type == "text":
+                        assistant_content.append({"type": "text", "text": b.text})
+                    elif b.type == "tool_use":
+                        assistant_content.append(
+                            {"type": "tool_use", "id": b.id, "name": b.name, "input": b.input}
+                        )
+                messages.append({"role": "assistant", "content": assistant_content})
+
+                tool_results = []
+                for block in tool_use_blocks:
+                    result = _execute_tool(block.name, block.input)
+                    tool_results.append(
+                        {
+                            "type": "tool_result",
+                            "tool_use_id": block.id,
+                            "content": json.dumps(result, ensure_ascii=False),
+                            "is_error": "error" in result,
+                        }
                     )
-            messages.append({"role": "assistant", "content": assistant_content})
 
-            # Executa cada ferramenta e acumula resultados
-            tool_results = []
-            for block in tool_use_blocks:
-                result = _execute_tool(block.name, block.input)
-                tool_results.append(
-                    {
-                        "type": "tool_result",
-                        "tool_use_id": block.id,
-                        "content": json.dumps(result, ensure_ascii=False),
-                        "is_error": "error" in result,
-                    }
-                )
+                messages.append({"role": "user", "content": tool_results})
+                continue
 
-            messages.append({"role": "user", "content": tool_results})
-            continue
+            break  # stop_reason inesperado
 
-        break  # stop_reason inesperado
+        return "Não consegui processar sua solicitação. Tente novamente."
 
-    return "Não consegui processar sua solicitação. Tente novamente."
+    finally:
+        # Registra consumo sempre — mesmo em caso de erro parcial
+        if tokens_entrada_total + tokens_saida_total > 0:
+            consumo_repo.registrar(auth_conn, user_id, tokens_entrada_total, tokens_saida_total)
+        auth_conn.close()
 
 
 # ---------------------------------------------------------------------------
@@ -549,7 +575,7 @@ def api_chat():
     messages.append({"role": "user", "content": user_message})
 
     try:
-        response_text = _run_agentic_loop(messages)
+        response_text = _run_agentic_loop(messages, user_id=current_user.id)
     except anthropic.APIStatusError as e:
         return jsonify({"error": f"Erro na API Claude: {e.status_code}"}), 502
     except Exception as e:
