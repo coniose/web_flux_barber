@@ -45,6 +45,7 @@ def create_app(test_config: dict | None = None) -> Flask:
     conn = ensure_db()
     _ensure_usuario_table(conn)
     _seed_demo_user(conn)
+    _activate_pro_from_env(conn)
     conn.close()
 
     from web.extensions import limiter
@@ -142,6 +143,25 @@ def _register_onboarding_gate(app) -> None:
         conn.close()
         if not completo:
             return redirect(url_for("setup.index"))
+
+
+def _activate_pro_from_env(conn) -> None:
+    """Ativa plano Pro para um usuário via env var ACTIVATE_PRO_USER_ID (uso único, remover após uso)."""
+    user_id = os.environ.get("ACTIVATE_PRO_USER_ID", "").strip()
+    customer_id = os.environ.get("ACTIVATE_PRO_CUSTOMER_ID", "").strip()
+    subscription_id = os.environ.get("ACTIVATE_PRO_SUBSCRIPTION_ID", "").strip()
+    if not user_id:
+        return
+    conn.execute(
+        """UPDATE usuario
+           SET plano = 'pro',
+               stripe_customer_id = COALESCE(NULLIF(?, ''), stripe_customer_id),
+               stripe_subscription_id = COALESCE(NULLIF(?, ''), stripe_subscription_id),
+               plano_verificado_em = datetime('now')
+           WHERE id = ?""",
+        (customer_id, subscription_id, int(user_id)),
+    )
+    logging.info("ACTIVATE_PRO_USER_ID: plano Pro ativado para user_id=%s", user_id)
 
 
 def _seed_demo_user(conn) -> None:

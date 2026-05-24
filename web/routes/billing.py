@@ -113,9 +113,10 @@ def webhook():
     except Exception:
         return "Payload inválido", 400
 
-    event_id = event["id"]
-    etype = event["type"]
-    data = event["data"]["object"]
+    event_id = event.get("id") or event.id
+    etype = event.get("type") or event.type
+    raw = event.get("data", {})
+    data = raw.get("object") if isinstance(raw, dict) else getattr(raw, "object", raw)
 
     conn = get_connection()
     try:
@@ -125,23 +126,28 @@ def webhook():
         ).fetchone():
             return "", 200
 
+        def _field(obj, key):
+            if isinstance(obj, dict):
+                return obj.get(key)
+            return getattr(obj, key, None)
+
         if etype == "checkout.session.completed":
             _ativar_pro(
                 conn=conn,
-                user_id=data.get("client_reference_id"),
-                customer_id=data.get("customer"),
-                subscription_id=data.get("subscription"),
+                user_id=_field(data, "client_reference_id"),
+                customer_id=_field(data, "customer"),
+                subscription_id=_field(data, "subscription"),
             )
         elif etype == "customer.subscription.deleted":
-            _desativar_pro(conn=conn, subscription_id=data.get("id"))
+            _desativar_pro(conn=conn, subscription_id=_field(data, "id"))
         elif etype == "invoice.payment_failed":
             # Marca o usuário para que na próxima verificação de plano
             # o Stripe seja consultado e o downgrade ocorra se necessário
-            _marcar_verificacao_pendente(conn=conn, customer_id=data.get("customer"))
+            _marcar_verificacao_pendente(conn=conn, customer_id=_field(data, "customer"))
             current_app.logger.warning(
                 "Pagamento falhou para customer %s (tentativa %s)",
-                data.get("customer"),
-                data.get("attempt_count"),
+                _field(data, "customer"),
+                _field(data, "attempt_count"),
             )
 
         conn.execute(
