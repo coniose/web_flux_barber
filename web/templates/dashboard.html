@@ -118,7 +118,7 @@
     <!-- KPIs de estoque do período -->
     {% set v_est = est_periodo["VENDA"]["total"] %}
     {% set c_est = est_periodo["COMPRA"]["total"] %}
-    {% if v_est > 0 or c_est > 0 %}
+    {% set margem_est = v_est - c_est %}
     <div class="mt-4 grid grid-cols-2 lg:grid-cols-3 gap-4">
       <div class="bg-gray-800 border border-gray-700 rounded-xl p-4">
         <p class="text-xs text-gray-400 mb-2">Vendas produtos</p>
@@ -130,15 +130,13 @@
         <p class="text-xl font-bold text-red-400">R$ {{ "%.2f"|format(c_est / 100) }}</p>
         <p class="text-xs text-gray-500 mt-1">{{ est_periodo["COMPRA"]["qtd"] }} unid.</p>
       </div>
-      {% set margem = v_est - c_est %}
       <div class="bg-gray-800 border border-gray-700 rounded-xl p-4">
         <p class="text-xs text-gray-400 mb-2">Margem bruta</p>
-        <p class="text-xl font-bold {{ 'text-emerald-400' if margem >= 0 else 'text-red-400' }}">
-          R$ {{ "%.2f"|format(margem / 100) }}
+        <p class="text-xl font-bold {{ 'text-emerald-400' if margem_est >= 0 else 'text-red-400' }}">
+          R$ {{ "%.2f"|format(margem_est / 100) }}
         </p>
       </div>
     </div>
-    {% endif %}
 
     <!-- Gráfico + Ranking -->
     <div class="mt-4 grid lg:grid-cols-3 gap-4">
