@@ -2,7 +2,7 @@
 {% block title %}Dashboard — Flux Barber{% endblock %}
 
 {% block content %}
-<div class="max-w-6xl mx-auto space-y-6">
+<div class="max-w-6xl mx-auto space-y-8">
 
   <!-- Header -->
   <div class="flex items-center justify-between">
@@ -17,7 +17,7 @@
     </a>
   </div>
 
-  <!-- KPIs Hoje -->
+  <!-- ── Seção 1: Hoje ── -->
   <div>
     <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Hoje</p>
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -34,126 +34,147 @@
           <p class="text-xs text-gray-400">{{ label }}</p>
         </div>
         <p class="text-xl font-bold text-white">
-          {% if label == 'Atendimentos' %}
-            {{ valor }}
-          {% else %}
-            R$ {{ "%.2f"|format(valor / 100) }}
-          {% endif %}
+          {% if label == 'Atendimentos' %}{{ valor }}
+          {% else %}R$ {{ "%.2f"|format(valor / 100) }}{% endif %}
         </p>
       </div>
       {% endfor %}
     </div>
-  </div>
 
-  <!-- KPIs Mês -->
-  <div>
-    <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Mês atual</p>
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-      {% set kpis_mes = [
-        ('Receita', total_mes, 'text-emerald-400'),
-        ('Despesa', desp_mes, 'text-red-400'),
-        ('Resultado', resultado_mes, 'text-blue-400' if resultado_mes >= 0 else 'text-red-400'),
-        ('Atendimentos', qtd_mes, 'text-purple-400'),
-      ] %}
-      {% for label, valor, cor in kpis_mes %}
-      <div class="bg-gray-800 border border-gray-700 rounded-xl p-4">
-        <p class="text-xs text-gray-400 mb-2">{{ label }}</p>
-        <p class="text-xl font-bold {{ cor }}">
-          {% if label == 'Atendimentos' %}
-            {{ valor }}
-          {% else %}
-            R$ {{ "%.2f"|format(valor / 100) }}
-          {% endif %}
-        </p>
-      </div>
-      {% endfor %}
-    </div>
-  </div>
-
-  <!-- KPIs Estoque -->
-  <div>
-    <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Estoque (mês)</p>
-    <div class="grid grid-cols-2 lg:grid-cols-3 gap-4">
-      <div class="bg-gray-800 border border-gray-700 rounded-xl p-4">
-        <div class="flex items-center gap-2 mb-2">
-          <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10"/></svg>
-          <p class="text-xs text-gray-400">Vendas produtos (hoje)</p>
+    <!-- Mix de pagamento + estoque hoje -->
+    <div class="mt-4 flex flex-wrap gap-3 items-start">
+      {% if mix %}
+        {% for m in mix %}
+        <div class="flex items-center gap-3 bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5">
+          <span class="text-sm font-semibold text-gray-300">{{ m['forma'] }}</span>
+          <span class="text-sm text-emerald-400 font-bold">R$ {{ "%.2f"|format(m['total'] / 100) }}</span>
+          <span class="text-xs text-gray-500">{{ m['qtd'] }}×</span>
         </div>
-        <p class="text-xl font-bold text-white">R$ {{ "%.2f"|format(est_vendas_hoje / 100) }}</p>
+        {% endfor %}
+      {% endif %}
+      {% if est_vendas_hoje > 0 %}
+      <div class="flex items-center gap-3 bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5">
+        <svg class="w-4 h-4 text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10"/></svg>
+        <span class="text-sm text-gray-300">Produtos vendidos</span>
+        <span class="text-sm text-emerald-400 font-bold">R$ {{ "%.2f"|format(est_vendas_hoje / 100) }}</span>
       </div>
-      <div class="bg-gray-800 border border-gray-700 rounded-xl p-4">
-        <div class="flex items-center gap-2 mb-2">
-          <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10"/></svg>
-          <p class="text-xs text-gray-400">Vendas produtos (mês)</p>
-        </div>
-        <p class="text-xl font-bold text-white">R$ {{ "%.2f"|format(est_vendas_mes / 100) }}</p>
-      </div>
-      <div class="bg-gray-800 border border-gray-700 rounded-xl p-4">
-        <div class="flex items-center gap-2 mb-2">
-          <svg class="w-4 h-4 {{ 'text-emerald-400' if est_margem_mes >= 0 else 'text-red-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
-          <p class="text-xs text-gray-400">Margem bruta estoque</p>
-        </div>
-        <p class="text-xl font-bold {{ 'text-emerald-400' if est_margem_mes >= 0 else 'text-red-400' }}">
-          R$ {{ "%.2f"|format(est_margem_mes / 100) }}
-        </p>
-      </div>
-    </div>
-  </div>
-
-  <!-- Gráfico + Ranking -->
-  <div class="grid lg:grid-cols-3 gap-4">
-
-    <!-- Gráfico receita x despesa -->
-    <div class="lg:col-span-2 bg-gray-800 border border-gray-700 rounded-xl p-5">
-      <h3 class="text-sm font-semibold text-white mb-4">Receita × Despesa (mês)</h3>
-      <div class="relative h-48">
-        <canvas id="chartMes"></canvas>
-      </div>
-    </div>
-
-    <!-- Ranking de serviços -->
-    <div class="bg-gray-800 border border-gray-700 rounded-xl p-5">
-      <h3 class="text-sm font-semibold text-white mb-4">Top serviços (mês)</h3>
-      {% if ranking %}
-        <div class="space-y-2">
-          {% for r in ranking %}
-          <div class="flex items-center gap-2">
-            <span class="text-xs text-gray-500 w-4">{{ loop.index }}</span>
-            <div class="flex-1 min-w-0">
-              <p class="text-xs text-white truncate">{{ r['servico_nome'] }}</p>
-              <p class="text-xs text-gray-500">{{ r['qtd'] }}× · R$ {{ "%.2f"|format(r['total'] / 100) }}</p>
-            </div>
-          </div>
-          {% endfor %}
-        </div>
-      {% else %}
-        <p class="text-xs text-gray-500">Nenhum atendimento este mês.</p>
+      {% endif %}
+      {% if not mix and est_vendas_hoje == 0 %}
+      <p class="text-xs text-gray-600 py-2.5">Nenhum lançamento hoje.</p>
       {% endif %}
     </div>
   </div>
 
-  <!-- Mix de pagamento (hoje) -->
-  {% if mix %}
-  <div class="bg-gray-800 border border-gray-700 rounded-xl p-5">
-    <h3 class="text-sm font-semibold text-white mb-4">Formas de pagamento (hoje)</h3>
-    <div class="flex flex-wrap gap-4">
-      {% for m in mix %}
-      <div class="flex items-center gap-3 bg-gray-900/50 rounded-lg px-4 py-2.5">
-        <span class="text-sm font-semibold text-gray-300">{{ m['forma'] }}</span>
-        <span class="text-sm text-emerald-400 font-bold">R$ {{ "%.2f"|format(m['total'] / 100) }}</span>
-        <span class="text-xs text-gray-500">{{ m['qtd'] }}×</span>
+  <!-- ── Seção 2: Período ── -->
+  <div>
+    <!-- Filtro de data -->
+    <div class="flex items-center gap-3 mb-4 flex-wrap">
+      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Período</p>
+      <form method="GET" action="{{ url_for('dashboard.index') }}" class="flex items-center gap-2 flex-wrap">
+        <input type="date" name="de" value="{{ de.isoformat() }}"
+               class="bg-gray-800 border border-gray-700 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-brand">
+        <span class="text-gray-600 text-sm">até</span>
+        <input type="date" name="ate" value="{{ ate.isoformat() }}"
+               class="bg-gray-800 border border-gray-700 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-brand">
+        <button type="submit"
+                class="px-3 py-1.5 bg-brand hover:bg-emerald-600 text-white text-sm font-medium rounded-lg transition-colors">
+          Filtrar
+        </button>
+        <!-- Atalhos rápidos -->
+        <a href="{{ url_for('dashboard.index', de=hoje.isoformat(), ate=hoje.isoformat()) }}"
+           class="px-2.5 py-1.5 text-xs rounded-lg border border-gray-700 text-gray-400 hover:text-white hover:border-gray-500 transition-colors">
+          Hoje
+        </a>
+        <a href="{{ url_for('dashboard.index', de=inicio_semana.isoformat(), ate=hoje.isoformat()) }}"
+           class="px-2.5 py-1.5 text-xs rounded-lg border border-gray-700 text-gray-400 hover:text-white hover:border-gray-500 transition-colors">
+          Semana
+        </a>
+        <a href="{{ url_for('dashboard.index', de=hoje.replace(day=1).isoformat(), ate=hoje.isoformat()) }}"
+           class="px-2.5 py-1.5 text-xs rounded-lg border border-gray-700 text-gray-400 hover:text-white hover:border-gray-500 transition-colors">
+          Mês
+        </a>
+      </form>
+    </div>
+
+    <!-- KPIs do período -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      {% set kpis_periodo = [
+        ('Receita', total_periodo, 'text-emerald-400'),
+        ('Despesa', desp_periodo, 'text-red-400'),
+        ('Resultado', resultado_periodo, 'text-blue-400' if resultado_periodo >= 0 else 'text-red-400'),
+        ('Atendimentos', qtd_periodo, 'text-purple-400'),
+      ] %}
+      {% for label, valor, cor in kpis_periodo %}
+      <div class="bg-gray-800 border border-gray-700 rounded-xl p-4">
+        <p class="text-xs text-gray-400 mb-2">{{ label }}</p>
+        <p class="text-xl font-bold {{ cor }}">
+          {% if label == 'Atendimentos' %}{{ valor }}
+          {% else %}R$ {{ "%.2f"|format(valor / 100) }}{% endif %}
+        </p>
       </div>
       {% endfor %}
     </div>
+
+    <!-- KPIs de estoque do período -->
+    {% set v_est = est_periodo["VENDA"]["total"] %}
+    {% set c_est = est_periodo["COMPRA"]["total"] %}
+    {% if v_est > 0 or c_est > 0 %}
+    <div class="mt-4 grid grid-cols-2 lg:grid-cols-3 gap-4">
+      <div class="bg-gray-800 border border-gray-700 rounded-xl p-4">
+        <p class="text-xs text-gray-400 mb-2">Vendas produtos</p>
+        <p class="text-xl font-bold text-emerald-400">R$ {{ "%.2f"|format(v_est / 100) }}</p>
+        <p class="text-xs text-gray-500 mt-1">{{ est_periodo["VENDA"]["qtd"] }} unid.</p>
+      </div>
+      <div class="bg-gray-800 border border-gray-700 rounded-xl p-4">
+        <p class="text-xs text-gray-400 mb-2">Custo compras</p>
+        <p class="text-xl font-bold text-red-400">R$ {{ "%.2f"|format(c_est / 100) }}</p>
+        <p class="text-xs text-gray-500 mt-1">{{ est_periodo["COMPRA"]["qtd"] }} unid.</p>
+      </div>
+      {% set margem = v_est - c_est %}
+      <div class="bg-gray-800 border border-gray-700 rounded-xl p-4">
+        <p class="text-xs text-gray-400 mb-2">Margem bruta</p>
+        <p class="text-xl font-bold {{ 'text-emerald-400' if margem >= 0 else 'text-red-400' }}">
+          R$ {{ "%.2f"|format(margem / 100) }}
+        </p>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Gráfico + Ranking -->
+    <div class="mt-4 grid lg:grid-cols-3 gap-4">
+      <div class="lg:col-span-2 bg-gray-800 border border-gray-700 rounded-xl p-5">
+        <h3 class="text-sm font-semibold text-white mb-4">Receita × Despesa</h3>
+        <div class="relative h-48">
+          <canvas id="chartPeriodo"></canvas>
+        </div>
+      </div>
+      <div class="bg-gray-800 border border-gray-700 rounded-xl p-5">
+        <h3 class="text-sm font-semibold text-white mb-4">Top serviços</h3>
+        {% if ranking %}
+          <div class="space-y-2">
+            {% for r in ranking %}
+            <div class="flex items-center gap-2">
+              <span class="text-xs text-gray-500 w-4">{{ loop.index }}</span>
+              <div class="flex-1 min-w-0">
+                <p class="text-xs text-white truncate">{{ r['servico_nome'] }}</p>
+                <p class="text-xs text-gray-500">{{ r['qtd'] }}× · R$ {{ "%.2f"|format(r['total'] / 100) }}</p>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p class="text-xs text-gray-500">Nenhum atendimento no período.</p>
+        {% endif %}
+      </div>
+    </div>
   </div>
-  {% endif %}
 
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script>
-const ctx = document.getElementById('chartMes');
+const ctx = document.getElementById('chartPeriodo');
 if (ctx) {
   new Chart(ctx, {
     type: 'bar',
@@ -179,7 +200,7 @@ if (ctx) {
       maintainAspectRatio: false,
       plugins: { legend: { labels: { color: '#9ca3af', font: { size: 11 } } } },
       scales: {
-        x: { ticks: { color: '#6b7280', font: { size: 10 } }, grid: { color: '#374151' } },
+        x: { ticks: { color: '#6b7280', font: { size: 10 }, maxTicksLimit: 15 }, grid: { color: '#374151' } },
         y: { ticks: { color: '#6b7280', font: { size: 10 }, callback: v => 'R$' + v }, grid: { color: '#374151' } }
       }
     }

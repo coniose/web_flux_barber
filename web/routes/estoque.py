@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, timedelta
 
 from flask import Blueprint, flash, jsonify, redirect, render_template, request, url_for
 from flask_login import login_required
@@ -20,10 +20,11 @@ estoque_bp = Blueprint("estoque", __name__)
 def index():
     hoje = date.today()
     inicio_mes = hoje.replace(day=1)
+    sessenta_dias = hoje - timedelta(days=60)
     conn = get_user_conn()
     produtos = produto_repo.listar_todos(conn)
     resumo = estoque_service.resumo_periodo(conn, inicio_mes, hoje)
-    movs = movimentacao_repo.listar_periodo(conn, inicio_mes, hoje)
+    movs = movimentacao_repo.listar_periodo(conn, sessenta_dias, hoje)
     return render_template(
         "estoque.html",
         produtos=produtos,
