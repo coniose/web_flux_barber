@@ -113,23 +113,23 @@ def webhook():
     except Exception:
         return "Payload inválido", 400
 
-    event_id = event.get("id") or event.id
-    etype = event.get("type") or event.type
-    raw = event.get("data", {})
-    data = raw.get("object") if isinstance(raw, dict) else getattr(raw, "object", raw)
-
     conn = get_connection()
     try:
-        # Idempotência: ignora eventos já processados (proteção contra retentativas duplicadas)
-        if conn.execute(
-            "SELECT 1 FROM stripe_events WHERE event_id = ?", (event_id,)
-        ).fetchone():
-            return "", 200
+        event_id = event["id"]
+        etype = event["type"]
+        raw = event["data"]
+        data = raw["object"] if isinstance(raw, dict) else getattr(raw, "object", raw)
 
         def _field(obj, key):
             if isinstance(obj, dict):
                 return obj.get(key)
             return getattr(obj, key, None)
+
+        # Idempotência: ignora eventos já processados (proteção contra retentativas duplicadas)
+        if conn.execute(
+            "SELECT 1 FROM stripe_events WHERE event_id = ?", (event_id,)
+        ).fetchone():
+            return "", 200
 
         if etype == "checkout.session.completed":
             _ativar_pro(
