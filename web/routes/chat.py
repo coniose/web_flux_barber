@@ -10,7 +10,7 @@ import anthropic
 from flask import Blueprint, abort, flash, jsonify, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 
-from app.repositories.sql import categoria_repo, movimentacao_repo, produto_repo, servico_repo
+from app.repositories.sql import categoria_repo, config_repo, item_frequente_repo, movimentacao_repo, produto_repo, servico_repo
 from app.services import despesa_service, estoque_service, receita_service
 from app.utils.validators import ValidacaoError
 from web.extensions import limiter
@@ -21,13 +21,75 @@ chat_bp = Blueprint("chat", __name__)
 _TOOLS = [
     {
         "name": "listar_servicos",
-        "description": "Lista todos os serviços ativos da barbearia com ID, nome e preço padrão em centavos.",
+        "description": "Lista todos os serviços ativos com ID, nome e preço padrão em centavos.",
         "input_schema": {"type": "object", "properties": {}, "required": []},
     },
     {
         "name": "listar_categorias_despesa",
         "description": "Lista todas as categorias de despesa ativas com ID e nome.",
         "input_schema": {"type": "object", "properties": {}, "required": []},
+    },
+    {
+        "name": "criar_produto",
+        "description": (
+            "Cria um novo produto no catálogo de estoque. "
+            "Use quando o usuário quiser adicionar um item que ainda não existe. "
+            "Para importação em massa, chame esta ferramenta múltiplas vezes — uma por produto."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "nome": {"type": "string", "description": "Nome do produto"},
+                "preco_custo": {
+                    "type": "integer",
+                    "description": "Preço de custo unitário em centavos. Use 0 se desconhecido.",
+                },
+                "preco_venda": {
+                    "type": "integer",
+                    "description": "Preço de venda unitário em centavos.",
+                },
+                "quantidade_inicial": {
+                    "type": "integer",
+                    "description": "Quantidade em estoque. Use 999 se ilimitado ou não informado.",
+                },
+                "descricao": {"type": "string", "description": "Descrição opcional"},
+            },
+            "required": ["nome", "preco_custo", "preco_venda"],
+        },
+    },
+    {
+        "name": "criar_servico",
+        "description": (
+            "Cria um novo serviço no catálogo. "
+            "Use quando o usuário quiser adicionar um serviço que ainda não existe."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "nome": {"type": "string", "description": "Nome do serviço"},
+                "preco_padrao": {
+                    "type": "integer",
+                    "description": "Preço padrão em centavos. Use 0 se não informado.",
+                },
+                "categoria": {
+                    "type": "string",
+                    "description": "Categoria do serviço (opcional, ex: Corte, Barba)",
+                },
+            },
+            "required": ["nome", "preco_padrao"],
+        },
+    },
+    {
+        "name": "criar_categoria_despesa",
+        "description": "Cria uma nova categoria de despesa.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "nome": {"type": "string", "description": "Nome da categoria"},
+                "icone": {"type": "string", "description": "Emoji para ícone (opcional)"},
+            },
+            "required": ["nome"],
+        },
     },
     {
         "name": "listar_produtos",
@@ -193,25 +255,32 @@ def _build_system_prompt() -> str:
 
     return (
         f"Você é o assistente financeiro de {nome_negocio}. "
-        f"Seu trabalho é registrar vendas, despesas e serviços de forma conversacional — rápida e sem atrito.\n\n"
+        f"Seu trabalho é registrar movimentos e também ajudar a configurar o catálogo do negócio — tudo de forma conversacional.\n\n"
         f"Contexto do negócio: {contexto_negocio}\n"
         f"{foco}\n"
         f"Formas de pagamento aceitas: {formas_str}.\n"
         f"Data de hoje: {date.today().isoformat()}\n\n"
-        "Comportamento:\n"
+        "## Registro de movimentos\n"
         "- Seja conciso. O usuário está ocupado.\n"
-        "- Ao registrar uma venda de produto, sempre pergunte o nome do cliente se não foi informado — é essencial para o relatório do dia.\n"
-        "- Após registrar, confirme com resumo: \"✓ [produto/serviço] — R$[valor] — [cliente se houver]\"\n"
-        "- Se o usuário mencionar produto pelo nome, use listar_produtos para achar o ID antes de registrar.\n"
-        "- Se o usuário mencionar serviço pelo nome, use listar_servicos para achar o ID antes de registrar.\n"
-        "- Interprete valores sempre em Reais (\"150 pix\" = R$150,00 = 15000 centavos).\n"
-        "- Para \"quanto vendi hoje?\", \"resumo do dia\" ou similar, use consultar_dashboard.\n"
-        "- Para \"relatório do dia\", \"lista de vendas\", \"o que vendi hoje\" → use gerar_relatorio_vendas. "
-        "O relatório retornado já está formatado — reproduza-o exatamente, sem reformatar.\n"
-        "- Se faltar dado essencial, peça apenas o que falta — sem perguntas longas.\n"
-        "- Nunca invente IDs — sempre busque via listar_servicos, listar_categorias_despesa ou listar_produtos.\n"
-        "- Formato de valores na resposta: sempre \"R$XX,XX\" com vírgula decimal.\n"
-        f"- Só sugira formas de pagamento que o negócio aceita: {formas_str}."
+        "- Ao registrar uma venda de produto, sempre pergunte o nome do cliente se não foi informado.\n"
+        "- Após registrar, confirme com resumo: \"✓ [item] — R$[valor] — [cliente se houver]\"\n"
+        "- Se o usuário mencionar produto pelo nome, use listar_produtos antes de registrar.\n"
+        "- Se o usuário mencionar serviço pelo nome, use listar_servicos antes de registrar.\n"
+        "- Interprete valores em Reais (\"150 pix\" = R$150,00 = 15000 centavos).\n"
+        "- Para \"quanto vendi hoje?\" → use consultar_dashboard.\n"
+        "- Para \"relatório do dia\" / \"lista de vendas\" → use gerar_relatorio_vendas. Reproduza o retorno exatamente.\n"
+        f"- Só sugira formas de pagamento aceitas: {formas_str}.\n\n"
+        "## Configuração do catálogo (importação em massa)\n"
+        "- Se o usuário quiser cadastrar itens novos (produtos, serviços, categorias), use criar_produto / criar_servico / criar_categoria_despesa.\n"
+        "- Para importação em massa: peça para o usuário colar tudo de uma vez (planilha, lista, qualquer formato).\n"
+        "- Identifique: nome, preço de custo, preço de venda, quantidade em estoque.\n"
+        "- Se faltar preço de venda: pergunte especificamente por cada item que falta, um de cada vez.\n"
+        "- Se a quantidade não for informada ou for ilimitada: use 999.\n"
+        "- Se o preço de custo não for informado: use 0.\n"
+        "- Após identificar todos os dados, crie os itens chamando criar_produto múltiplas vezes (uma por item).\n"
+        "- Ao fim confirme: \"✓ X itens cadastrados\" com a lista.\n"
+        "- Nunca invente IDs — sempre busque via listar_* antes de registrar movimentos.\n"
+        "- Formato de valores na resposta: sempre \"R$XX,XX\" com vírgula decimal."
     )
 
 
@@ -239,6 +308,41 @@ def _execute_tool(name: str, inputs: dict) -> dict:
                     for r in rows
                 ]
             }
+
+        if name == "criar_produto":
+            qtd = inputs.get("quantidade_inicial", 999)
+            prod_id = estoque_service.cadastrar_produto(
+                conn,
+                nome=inputs["nome"],
+                preco_custo=inputs["preco_custo"],
+                preco_venda=inputs["preco_venda"],
+                descricao=inputs.get("descricao"),
+            )
+            if qtd and qtd > 0:
+                estoque_service.ajustar_estoque(
+                    conn,
+                    produto_id=prod_id,
+                    nova_quantidade=qtd,
+                    observacao="Estoque inicial via chat",
+                )
+            return {"ok": True, "produto_id": prod_id, "nome": inputs["nome"]}
+
+        if name == "criar_servico":
+            s_id = servico_repo.criar(
+                conn,
+                nome=inputs["nome"],
+                preco_padrao=inputs["preco_padrao"],
+                categoria_servico=inputs.get("categoria"),
+            )
+            return {"ok": True, "servico_id": s_id, "nome": inputs["nome"]}
+
+        if name == "criar_categoria_despesa":
+            c_id = categoria_repo.criar(
+                conn,
+                nome=inputs["nome"],
+                icone=inputs.get("icone", "📦"),
+            )
+            return {"ok": True, "categoria_id": c_id, "nome": inputs["nome"]}
 
         if name == "registrar_atendimento":
             data_obj = date.fromisoformat(inputs["data"]) if inputs.get("data") else date.today()

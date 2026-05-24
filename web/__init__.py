@@ -91,8 +91,27 @@ def create_app(test_config: dict | None = None) -> Flask:
     app.register_blueprint(setup_bp)
 
     _register_onboarding_gate(app)
+    _register_context_processors(app)
 
     return app
+
+
+def _register_context_processors(app) -> None:
+    from flask_login import current_user
+
+    @app.context_processor
+    def inject_negocio():
+        if not current_user.is_authenticated:
+            return {"nome_negocio": "Flux"}
+        try:
+            from app.repositories.sql import config_repo
+            from web.models import get_user_conn
+            conn = get_user_conn()
+            nome = config_repo.get_config(conn, "nome_negocio") or "Flux"
+            conn.close()
+        except Exception:
+            nome = "Flux"
+        return {"nome_negocio": nome}
 
 
 def _register_onboarding_gate(app) -> None:
