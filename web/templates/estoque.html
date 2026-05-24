@@ -83,10 +83,7 @@
                         {% if p['quantidade_estoque'] == 0 or not p['ativo'] %}disabled{% endif %}>
                   Vender
                 </button>
-                <button onclick="abrirEditar({{ p['id'] }}, {{ p['nome']|tojson }}, {{ p['preco_custo'] }}, {{ p['preco_venda'] }}, {{ (p['descricao'] or '')|tojson }})"
-                        class="text-xs px-2 py-1 rounded bg-blue-500/15 text-blue-400 hover:bg-blue-500/25 transition-colors">
-                  Editar
-                </button>
+
                 <button onclick="abrirAjuste({{ p['id'] }}, '{{ p['nome']|e }}', {{ p['quantidade_estoque'] }})"
                         class="text-xs px-2 py-1 rounded bg-gray-600/50 text-gray-300 hover:bg-gray-600 transition-colors">
                   Qtd
@@ -172,58 +169,6 @@
 
 </div>
 
-<!-- Modal Editar Produto -->
-<div id="modal-editar" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60">
-  <div class="bg-gray-800 border border-gray-700 rounded-2xl p-6 w-full max-w-md">
-    <h3 class="text-base font-semibold text-white mb-5">Editar Produto</h3>
-    <form method="POST" action="{{ url_for('estoque.editar_produto') }}" class="space-y-4">
-      <input type="hidden" name="produto_id" id="editar-produto-id">
-      <div>
-        <label class="block text-xs font-medium text-gray-400 mb-1.5">Nome</label>
-        <input type="text" name="nome" id="editar-nome" required
-               class="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2.5 text-white text-sm focus:ring-2 focus:ring-brand focus:outline-none">
-      </div>
-      <div class="grid grid-cols-2 gap-3">
-        <div>
-          <label class="block text-xs font-medium text-gray-400 mb-1.5">Custo unitário (R$)</label>
-          <input type="number" name="preco_custo" id="editar-custo" step="0.01" min="0" required
-                 class="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2.5 text-white text-sm focus:ring-2 focus:ring-brand focus:outline-none">
-        </div>
-        <div>
-          <label class="block text-xs font-medium text-gray-400 mb-1.5">Preço de venda (R$)</label>
-          <input type="number" name="preco_venda" id="editar-venda" step="0.01" min="0" required
-                 class="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2.5 text-white text-sm focus:ring-2 focus:ring-brand focus:outline-none">
-        </div>
-      </div>
-      <div>
-        <label class="block text-xs font-medium text-gray-400 mb-1.5">Descrição (opcional)</label>
-        <input type="text" name="descricao" id="editar-descricao" placeholder="ex: shampoo hidratante 250ml"
-               class="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2.5 text-white text-sm focus:ring-2 focus:ring-brand focus:outline-none">
-      </div>
-      <div class="flex gap-3 pt-2">
-        <button type="button" onclick="closeModal('modal-editar')"
-                class="flex-1 py-2.5 text-sm font-medium rounded-lg border border-gray-600 text-gray-400 hover:text-white transition-colors">
-          Cancelar
-        </button>
-        <button type="submit"
-                class="flex-1 py-2.5 text-sm font-semibold rounded-lg bg-brand hover:bg-emerald-600 text-white transition-colors">
-          Salvar alterações
-        </button>
-      </div>
-    </form>
-    <div class="mt-5 pt-4 border-t border-gray-700">
-      <p class="text-xs text-gray-500 mb-3">Zona de perigo</p>
-      <form method="POST" action="{{ url_for('estoque.desativar_produto') }}">
-        <input type="hidden" name="produto_id" id="desativar-produto-id">
-        <button type="submit"
-                onclick="return confirm('Desativar este produto? O estoque será zerado e o histórico de movimentações será preservado.')"
-                class="w-full py-2 text-sm font-medium rounded-lg border border-red-500/30 text-red-400 hover:bg-red-500/10 transition-colors">
-          Desativar produto
-        </button>
-      </form>
-    </div>
-  </div>
-</div>
 
 <!-- Modal Registrar Compra -->
 <div id="modal-compra" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60">
@@ -406,14 +351,5 @@ function abrirAjuste(id, nome, qtdAtual) {
   openModal('modal-ajuste');
 }
 
-function abrirEditar(id, nome, custo, venda, descricao) {
-  document.getElementById('editar-produto-id').value = id;
-  document.getElementById('desativar-produto-id').value = id;
-  document.getElementById('editar-nome').value = nome;
-  document.getElementById('editar-custo').value = (custo / 100).toFixed(2);
-  document.getElementById('editar-venda').value = (venda / 100).toFixed(2);
-  document.getElementById('editar-descricao').value = descricao || '';
-  openModal('modal-editar');
-}
 </script>
 {% endblock %}

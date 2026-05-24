@@ -293,6 +293,7 @@ def _run_agentic_loop(messages: list[dict]) -> str:
                         "type": "tool_result",
                         "tool_use_id": block.id,
                         "content": json.dumps(result, ensure_ascii=False),
+                        "is_error": "error" in result,
                     }
                 )
 

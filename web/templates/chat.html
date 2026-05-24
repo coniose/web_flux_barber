@@ -76,9 +76,29 @@
   const messagesEl = document.getElementById('messages');
   const inputEl    = document.getElementById('input');
   const sendBtn    = document.getElementById('send-btn');
+  const STORAGE_KEY = 'flux_chat_history';
 
-  // Histórico de mensagens para a API (texto simples)
+  // Histórico de mensagens para a API
   let history = [];
+
+  function saveHistory() {
+    try { sessionStorage.setItem(STORAGE_KEY, JSON.stringify(history)); } catch {}
+  }
+
+  // Restaura conversa ao voltar pra esta rota sem fechar a aba
+  (function restoreHistory() {
+    try {
+      const saved = sessionStorage.getItem(STORAGE_KEY);
+      if (!saved) return;
+      const parsed = JSON.parse(saved);
+      if (!Array.isArray(parsed) || parsed.length === 0) return;
+      history = parsed;
+      // Remove saudação estática e re-renderiza a conversa salva
+      const greeting = messagesEl.querySelector('div');
+      if (greeting) greeting.remove();
+      parsed.forEach(msg => appendMessage(msg.role, msg.content));
+    } catch { sessionStorage.removeItem(STORAGE_KEY); }
+  })();
 
   // Auto-resize do textarea
   inputEl.addEventListener('input', () => {
@@ -185,14 +205,11 @@
         const reply = data.response;
         appendMessage('assistant', reply);
 
-        // Atualiza histórico (formato simples para o backend)
+        // Atualiza histórico e persiste na sessão
         history.push({ role: 'user', content: text });
         history.push({ role: 'assistant', content: reply });
-
-        // Mantém apenas as últimas 20 trocas (40 mensagens) para não crescer infinito
-        if (history.length > 40) {
-          history = history.slice(history.length - 40);
-        }
+        if (history.length > 40) history = history.slice(history.length - 40);
+        saveHistory();
       }
     } catch (err) {
       removeTyping();
