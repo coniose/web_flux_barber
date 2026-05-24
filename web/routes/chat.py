@@ -462,10 +462,10 @@ def _execute_tool(name: str, inputs: dict) -> dict:
 def _run_agentic_loop(messages: list[dict]) -> str:
     client = anthropic.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY", ""))
 
-    for _ in range(10):  # máximo de 10 iterações para evitar loops infinitos
+    for _ in range(30):  # limite generoso para suportar importações em massa
         response = client.messages.create(
             model="claude-sonnet-4-6",
-            max_tokens=1024,
+            max_tokens=4096,
             system=_build_system_prompt(),
             tools=_TOOLS,
             messages=messages,
