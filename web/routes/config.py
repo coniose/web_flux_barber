@@ -7,13 +7,13 @@ from flask_login import current_user, login_required
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from app.repositories.db import get_connection
-from app.repositories.sql import categoria_repo, item_frequente_repo, produto_repo, servico_repo
+from app.repositories.sql import categoria_repo, config_repo, item_frequente_repo, produto_repo, servico_repo
 from app.utils.validators import ValidacaoError
 from web.models import get_user_conn
 
 config_bp = Blueprint("config", __name__)
 
-TABS = ("servicos", "categorias", "itens", "produtos", "conta")
+TABS = ("negocio", "servicos", "categorias", "itens", "produtos", "conta")
 
 
 def _redir(tab: str):
@@ -33,6 +33,13 @@ def index():
     cat_map = {c["id"]: c for c in categorias}
     itens = [{**i, "cat_nome": cat_map.get(i.get("categoria_id"), {}).get("nome", ""), "cat_icone": cat_map.get(i.get("categoria_id"), {}).get("icone", "📦")} for i in itens_raw]
     produtos = produto_repo.listar_todos(conn)
+    negocio = {
+        "nome_negocio": config_repo.get_config(conn, "nome_negocio") or "",
+        "descricao_negocio": config_repo.get_config(conn, "descricao_negocio") or "",
+        "tipo_trabalho": config_repo.get_config(conn, "tipo_trabalho") or "ambos",
+        "formas_pagamento": (config_repo.get_config(conn, "formas_pagamento") or "PIX,DINHEIRO,MAQUININHA").split(","),
+        "horario_trabalho": config_repo.get_config(conn, "horario_trabalho") or "",
+    }
     return render_template(
         "config.html",
         tab=tab,
@@ -40,6 +47,7 @@ def index():
         categorias=categorias,
         itens=itens,
         produtos=produtos,
+        negocio=negocio,
     )
 
 
@@ -226,6 +234,37 @@ def produto_toggle(pid: int):
         produto_repo.atualizar(conn, pid, ativo=novo)
         flash("Produto " + ("ativado" if novo else "desativado") + ".", "success")
     return _redir("produtos")
+
+
+# ── Negócio ───────────────────────────────────────────────────────────────────
+
+@config_bp.route("/config/negocio", methods=["POST"])
+@login_required
+def negocio_update():
+    conn = get_user_conn()
+    try:
+        nome = request.form.get("nome_negocio", "").strip()
+        descricao = request.form.get("descricao_negocio", "").strip()
+        tipo = request.form.get("tipo_trabalho") or "ambos"
+        formas = request.form.getlist("formas_pagamento")
+        horario = request.form.get("horario_trabalho", "").strip()
+
+        if not nome:
+            raise ValidacaoError("Nome do negócio é obrigatório.")
+        if tipo not in ("servicos", "produtos", "ambos"):
+            tipo = "ambos"
+        formas_validas = {"PIX", "DINHEIRO", "MAQUININHA"}
+        formas = [f for f in formas if f in formas_validas] or ["PIX", "DINHEIRO", "MAQUININHA"]
+
+        config_repo.set_config(conn, "nome_negocio", nome)
+        config_repo.set_config(conn, "descricao_negocio", descricao)
+        config_repo.set_config(conn, "tipo_trabalho", tipo)
+        config_repo.set_config(conn, "formas_pagamento", ",".join(formas))
+        config_repo.set_config(conn, "horario_trabalho", horario)
+        flash("Perfil do negócio atualizado.", "success")
+    except (ValidacaoError, ValueError) as e:
+        flash(str(e), "error")
+    return _redir("negocio")
 
 
 # ── Conta (continua em SQLite — autenticação) ─────────────────────────────────

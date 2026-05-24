@@ -166,9 +166,37 @@ _TOOLS = [
 
 
 def _build_system_prompt() -> str:
+    from app.repositories.sql import config_repo
+
+    conn = get_user_conn()
+    nome_negocio = config_repo.get_config(conn, "nome_negocio") or "seu negócio"
+    descricao = config_repo.get_config(conn, "descricao_negocio") or ""
+    tipo = config_repo.get_config(conn, "tipo_trabalho") or "ambos"
+    formas_raw = config_repo.get_config(conn, "formas_pagamento") or "PIX,DINHEIRO,MAQUININHA"
+    horario = config_repo.get_config(conn, "horario_trabalho") or ""
+
+    formas_lista = formas_raw.split(",")
+    formas_str = ", ".join(formas_lista)
+
+    contexto_negocio = f"Negócio: {nome_negocio}."
+    if descricao:
+        contexto_negocio += f" {descricao}"
+    if horario:
+        contexto_negocio += f" Horário: {horario}."
+
+    if tipo == "servicos":
+        foco = "O negócio trabalha com serviços (não com produtos físicos no estoque)."
+    elif tipo == "produtos":
+        foco = "O negócio trabalha com venda de produtos. Não há serviços avulsos."
+    else:
+        foco = "O negócio trabalha com serviços e venda de produtos."
+
     return (
-        f"Você é um assistente financeiro pessoal. "
+        f"Você é o assistente financeiro de {nome_negocio}. "
         f"Seu trabalho é registrar vendas, despesas e serviços de forma conversacional — rápida e sem atrito.\n\n"
+        f"Contexto do negócio: {contexto_negocio}\n"
+        f"{foco}\n"
+        f"Formas de pagamento aceitas: {formas_str}.\n"
         f"Data de hoje: {date.today().isoformat()}\n\n"
         "Comportamento:\n"
         "- Seja conciso. O usuário está ocupado.\n"
@@ -182,7 +210,8 @@ def _build_system_prompt() -> str:
         "O relatório retornado já está formatado — reproduza-o exatamente, sem reformatar.\n"
         "- Se faltar dado essencial, peça apenas o que falta — sem perguntas longas.\n"
         "- Nunca invente IDs — sempre busque via listar_servicos, listar_categorias_despesa ou listar_produtos.\n"
-        "- Formato de valores na resposta: sempre \"R$XX,XX\" com vírgula decimal."
+        "- Formato de valores na resposta: sempre \"R$XX,XX\" com vírgula decimal.\n"
+        f"- Só sugira formas de pagamento que o negócio aceita: {formas_str}."
     )
 
 

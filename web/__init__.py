@@ -77,6 +77,7 @@ def create_app(test_config: dict | None = None) -> Flask:
     from web.routes.lancamento import lancamento_bp
     from web.routes.receitas import receitas_bp
     from web.routes.config import config_bp
+    from web.routes.setup import setup_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(billing_bp)
@@ -87,8 +88,41 @@ def create_app(test_config: dict | None = None) -> Flask:
     app.register_blueprint(despesas_bp)
     app.register_blueprint(estoque_bp)
     app.register_blueprint(config_bp)
+    app.register_blueprint(setup_bp)
+
+    _register_onboarding_gate(app)
 
     return app
+
+
+def _register_onboarding_gate(app) -> None:
+    """Redireciona usuários autenticados sem onboarding para /setup."""
+    from flask import redirect, request, url_for
+    from flask_login import current_user
+
+    @app.before_request
+    def gate_onboarding():
+        # Só se aplica a usuários logados
+        if not current_user.is_authenticated:
+            return None
+
+        # Rotas que não precisam do onboarding completo
+        endpoint = request.endpoint or ""
+        if (
+            endpoint.startswith("auth.")
+            or endpoint.startswith("setup.")
+            or endpoint.startswith("static")
+            or endpoint.startswith("billing.")
+        ):
+            return None
+
+        from app.repositories.sql import config_repo
+        from web.models import get_user_conn
+        conn = get_user_conn()
+        completo = config_repo.get_config(conn, "onboarding_completo")
+        conn.close()
+        if not completo:
+            return redirect(url_for("setup.index"))
 
 
 def _seed_demo_user(conn) -> None:
@@ -105,13 +139,35 @@ def _seed_demo_user(conn) -> None:
         if row["plano"] != "pro":
             conn.execute("UPDATE usuario SET plano = 'pro' WHERE email = ?", (DEMO_EMAIL,))
         if not row["device_id"]:
-            conn.execute("UPDATE usuario SET device_id = ? WHERE email = ?", (_uuid.uuid4().hex, DEMO_EMAIL))
-        return
+            device_id = _uuid.uuid4().hex
+            conn.execute("UPDATE usuario SET device_id = ? WHERE email = ?", (device_id, DEMO_EMAIL))
+        else:
+            device_id = row["device_id"]
+    else:
+        device_id = _uuid.uuid4().hex
+        conn.execute(
+            "INSERT INTO usuario (email, nome, senha_hash, device_id, plano) VALUES (?, ?, ?, ?, ?)",
+            (DEMO_EMAIL, DEMO_NOME, generate_password_hash(DEMO_SENHA), device_id, "pro"),
+        )
 
-    conn.execute(
-        "INSERT INTO usuario (email, nome, senha_hash, device_id, plano) VALUES (?, ?, ?, ?, ?)",
-        (DEMO_EMAIL, DEMO_NOME, generate_password_hash(DEMO_SENHA), _uuid.uuid4().hex, "pro"),
-    )
+    _seed_demo_onboarding(device_id)
+
+
+def _seed_demo_onboarding(device_id: str) -> None:
+    """Garante que o onboarding do demo user esteja completo."""
+    from app.repositories.sql import config_repo
+    from app.repositories.user_db import get_user_connection
+    try:
+        user_conn = get_user_connection(device_id)
+        if not config_repo.get_config(user_conn, "onboarding_completo"):
+            config_repo.set_config(user_conn, "nome_negocio", "Demo Dev")
+            config_repo.set_config(user_conn, "descricao_negocio", "Conta de demonstração do sistema.")
+            config_repo.set_config(user_conn, "tipo_trabalho", "ambos")
+            config_repo.set_config(user_conn, "formas_pagamento", "PIX,DINHEIRO,MAQUININHA")
+            config_repo.set_config(user_conn, "onboarding_completo", "1")
+        user_conn.close()
+    except Exception:
+        pass  # não bloqueia o boot se o DB de usuário falhar
 
 
 def _ensure_usuario_table(conn) -> None:
