@@ -13,6 +13,7 @@ from flask_login import current_user, login_required
 from app.repositories.sql import categoria_repo, produto_repo, servico_repo
 from app.services import despesa_service, estoque_service, receita_service
 from app.utils.validators import ValidacaoError
+from web.extensions import limiter
 from web.models import get_user_conn
 
 chat_bp = Blueprint("chat", __name__)
@@ -326,12 +327,13 @@ def index():
 
 @chat_bp.route("/api/chat", methods=["POST"])
 @login_required
+@limiter.limit("30 per minute", key_func=lambda: str(current_user.id))
 def api_chat():
     if not current_user.is_pro:
         return jsonify({"error": "Recurso exclusivo do plano Pro."}), 403
     payload = request.get_json(silent=True) or {}
-    user_message = (payload.get("message") or "").strip()
-    history = payload.get("history") or []
+    user_message = (payload.get("message") or "").strip()[:2000]
+    history = (payload.get("history") or [])[-20:]
 
     if not user_message:
         return jsonify({"error": "Mensagem vazia"}), 400

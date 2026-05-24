@@ -11,9 +11,12 @@ O caminho base é derivado da variável de ambiente FLUXO_BARBER_DB
 from __future__ import annotations
 
 import os
+import re
 import sqlite3
 from pathlib import Path
 from typing import Optional
+
+_DEVICE_ID_RE = re.compile(r'^[a-f0-9]{32}$')
 
 # ------------------------------------------------------------------ schema ---
 
@@ -152,6 +155,8 @@ def _users_dir() -> Path:
 
 def _user_db_path(device_id: str) -> Path:
     """Retorna o caminho do banco SQLite de um usuário específico."""
+    if not _DEVICE_ID_RE.match(device_id):
+        raise ValueError(f"device_id inválido: {device_id!r}")
     return _users_dir() / f"{device_id}.db"
 
 

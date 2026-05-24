@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+import logging
 import os
+import secrets
 from pathlib import Path
 
 from dotenv import load_dotenv
-from flask import Flask
+from flask import Flask, Response
 from flask_login import LoginManager
 
 from app.repositories.db import ensure_db
@@ -20,7 +22,17 @@ login_manager = LoginManager()
 def create_app(test_config: dict | None = None) -> Flask:
     app = Flask(__name__, template_folder="templates", static_folder="static")
 
-    app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "dev-secret-change-in-prod")
+    secret_key = os.environ.get("SECRET_KEY")
+    if not secret_key:
+        if os.environ.get("RAILWAY_ENVIRONMENT"):
+            raise RuntimeError(
+                "SECRET_KEY não configurada. Execute: "
+                "railway variables set SECRET_KEY=$(python -c \"import secrets; print(secrets.token_hex(32))\")"
+            )
+        secret_key = secrets.token_hex(32)
+        logging.warning("SECRET_KEY não definida — gerada aleatoriamente (sessões não persistem entre restarts)")
+
+    app.config["SECRET_KEY"] = secret_key
     app.config["STRIPE_SECRET_KEY"] = os.environ.get("STRIPE_SECRET_KEY", "")
     app.config["STRIPE_PUBLISHABLE_KEY"] = os.environ.get("STRIPE_PUBLISHABLE_KEY", "")
     app.config["STRIPE_WEBHOOK_SECRET"] = os.environ.get("STRIPE_WEBHOOK_SECRET", "")
@@ -35,6 +47,9 @@ def create_app(test_config: dict | None = None) -> Flask:
     _seed_demo_user(conn)
     conn.close()
 
+    from web.extensions import limiter
+    limiter.init_app(app)
+
     login_manager.init_app(app)
     login_manager.login_view = "auth.login"
     login_manager.login_message = "Faça login para continuar."
@@ -45,6 +60,13 @@ def create_app(test_config: dict | None = None) -> Flask:
     @login_manager.user_loader
     def load_user(user_id: str):
         return User.get_by_id(int(user_id))
+
+    @app.after_request
+    def set_security_headers(response: Response) -> Response:
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        return response
 
     from web.auth.routes import auth_bp
     from web.routes.billing import billing_bp
