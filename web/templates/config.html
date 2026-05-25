@@ -456,7 +456,7 @@
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <div>
         <label class="block text-xs font-medium text-gray-400 mb-1.5">Nome</label>
-        <input type="text" name="nome" id="srv-nome" required
+        <input type="text" name="nome" id="srv-nome" required minlength="2"
                class="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2.5 text-white text-sm focus:ring-2 focus:ring-brand focus:outline-none">
       </div>
       <div class="grid grid-cols-2 gap-3">
@@ -498,7 +498,7 @@
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <div>
         <label class="block text-xs font-medium text-gray-400 mb-1.5">Nome</label>
-        <input type="text" name="nome" id="cat-nome" required
+        <input type="text" name="nome" id="cat-nome" required minlength="2"
                class="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2.5 text-white text-sm focus:ring-2 focus:ring-brand focus:outline-none">
       </div>
       <div>
@@ -528,7 +528,7 @@
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <div>
         <label class="block text-xs font-medium text-gray-400 mb-1.5">Descrição</label>
-        <input type="text" name="descricao" id="item-descricao" required
+        <input type="text" name="descricao" id="item-descricao" required minlength="2"
                class="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2.5 text-white text-sm focus:ring-2 focus:ring-brand focus:outline-none">
       </div>
       <div class="grid grid-cols-2 gap-3">
@@ -569,7 +569,7 @@
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <div>
         <label class="block text-xs font-medium text-gray-400 mb-1.5">Nome</label>
-        <input type="text" name="nome" id="prod-nome" required
+        <input type="text" name="nome" id="prod-nome" required minlength="2"
                class="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2.5 text-white text-sm focus:ring-2 focus:ring-brand focus:outline-none">
       </div>
       <div>

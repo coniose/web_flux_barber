@@ -319,12 +319,9 @@ function selecionarServico(id, preco, nome) {
   document.getElementById('confirm-panel').classList.remove('hidden');
   document.getElementById('confirm-panel').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 
-  // Limpa forma
-  document.getElementById('forma_input').value = '';
-  document.querySelectorAll('.forma-btn').forEach(b => {
-    b.classList.remove('border-brand', 'text-brand', 'bg-brand/10');
-    b.classList.add('border-gray-600', 'text-gray-400');
-  });
+  // Pré-seleciona forma padrão
+  const defaultForma = document.body.dataset.defaultForma || 'PIX';
+  selecionarForma(defaultForma);
 }
 
 function cancelarServico() {
