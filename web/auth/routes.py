@@ -9,6 +9,7 @@ from flask import Blueprint, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required, login_user, logout_user
 
 from app.repositories.db import get_connection
+from web.extensions import limiter
 from web.models import User
 
 auth_bp = Blueprint("auth", __name__, url_prefix="/auth")
@@ -96,6 +97,7 @@ def logout():
 
 
 @auth_bp.route("/esqueci-senha", methods=["GET", "POST"])
+@limiter.limit("5 per hour")
 def esqueci_senha():
     if current_user.is_authenticated:
         return redirect(url_for("dashboard.index"))
