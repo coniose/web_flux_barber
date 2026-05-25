@@ -103,6 +103,19 @@ def servico_toggle(sid: int):
     return _redir("servicos")
 
 
+@config_bp.route("/config/servico/<int:sid>/excluir", methods=["POST"])
+@login_required
+def servico_excluir(sid: int):
+    conn = get_user_conn()
+    usos = conn.execute("SELECT COUNT(*) FROM receita WHERE servico_id = ?", (sid,)).fetchone()[0]
+    if usos > 0:
+        flash(f"Serviço tem {usos} lançamento(s) — desative-o em vez de excluir.", "error")
+    else:
+        conn.execute("DELETE FROM servico WHERE id = ?", (sid,))
+        flash("Serviço excluído.", "success")
+    return _redir("servicos")
+
+
 # ── Categorias ────────────────────────────────────────────────────────────────
 
 @config_bp.route("/config/categoria/nova", methods=["POST"])
@@ -146,6 +159,22 @@ def categoria_toggle(cid: int):
         novo = not bool(row.get("ativo", True))
         categoria_repo.atualizar(conn, cid, ativo=novo)
         flash("Categoria " + ("ativada" if novo else "desativada") + ".", "success")
+    return _redir("categorias")
+
+
+@config_bp.route("/config/categoria/<int:cid>/excluir", methods=["POST"])
+@login_required
+def categoria_excluir(cid: int):
+    conn = get_user_conn()
+    despesas = conn.execute("SELECT COUNT(*) FROM despesa WHERE categoria_id = ?", (cid,)).fetchone()[0]
+    itens = conn.execute("SELECT COUNT(*) FROM item_despesa_frequente WHERE categoria_id = ?", (cid,)).fetchone()[0]
+    if despesas > 0:
+        flash(f"Categoria tem {despesas} despesa(s) — desative-a em vez de excluir.", "error")
+    elif itens > 0:
+        flash(f"Categoria tem {itens} item(ns) frequente(s) vinculado(s) — exclua-os primeiro.", "error")
+    else:
+        conn.execute("DELETE FROM categoria_despesa WHERE id = ?", (cid,))
+        flash("Categoria excluída.", "success")
     return _redir("categorias")
 
 
@@ -201,6 +230,17 @@ def item_toggle(iid: int):
     return _redir("itens")
 
 
+@config_bp.route("/config/item/<int:iid>/excluir", methods=["POST"])
+@login_required
+def item_excluir(iid: int):
+    conn = get_user_conn()
+    # Desvincula despesas que usaram este item (referência nullable)
+    conn.execute("UPDATE despesa SET item_frequente_id = NULL WHERE item_frequente_id = ?", (iid,))
+    conn.execute("DELETE FROM item_despesa_frequente WHERE id = ?", (iid,))
+    flash("Item excluído.", "success")
+    return _redir("itens")
+
+
 # ── Produtos ──────────────────────────────────────────────────────────────────
 
 @config_bp.route("/config/produto/<int:pid>/edit", methods=["POST"])
@@ -233,6 +273,21 @@ def produto_toggle(pid: int):
         novo = not bool(row.get("ativo", True))
         produto_repo.atualizar(conn, pid, ativo=novo)
         flash("Produto " + ("ativado" if novo else "desativado") + ".", "success")
+    return _redir("produtos")
+
+
+@config_bp.route("/config/produto/<int:pid>/excluir", methods=["POST"])
+@login_required
+def produto_excluir(pid: int):
+    conn = get_user_conn()
+    movs = conn.execute(
+        "SELECT COUNT(*) FROM movimentacao_estoque WHERE produto_id = ?", (pid,)
+    ).fetchone()[0]
+    if movs > 0:
+        flash(f"Produto tem {movs} movimentação(ões) — desative-o em vez de excluir.", "error")
+    else:
+        conn.execute("DELETE FROM produto WHERE id = ?", (pid,))
+        flash("Produto excluído.", "success")
     return _redir("produtos")
 
 
@@ -297,6 +352,29 @@ def conta_update():
         flash(str(e), "error")
     finally:
         conn.close()
+    return _redir("conta")
+
+
+@config_bp.route("/config/reset-conta", methods=["POST"])
+@login_required
+def reset_conta():
+    confirmacao = request.form.get("confirmacao", "").strip()
+    if confirmacao != "CONFIRMAR":
+        flash("Digite CONFIRMAR para apagar todos os dados.", "error")
+        return _redir("conta")
+
+    from app.repositories.user_db import _user_db_path
+    db_path = _user_db_path(current_user.device_id)
+    try:
+        if db_path.exists():
+            db_path.unlink()
+        # Abre nova conexão → schema + seed são reaplicados automaticamente
+        from app.repositories.user_db import get_user_connection
+        conn = get_user_connection(current_user.device_id)
+        conn.close()
+        flash("Conta resetada. Todos os dados foram apagados e os exemplos foram restaurados.", "success")
+    except Exception as exc:
+        flash(f"Erro ao resetar conta: {exc}", "error")
     return _redir("conta")
 
 

@@ -98,6 +98,7 @@ def logout():
 
 @auth_bp.route("/esqueci-senha", methods=["GET", "POST"])
 @limiter.limit("5 per hour")
+@limiter.limit("3 per hour", key_func=lambda: request.form.get("email", "").lower().strip())
 def esqueci_senha():
     if current_user.is_authenticated:
         return redirect(url_for("dashboard.index"))
