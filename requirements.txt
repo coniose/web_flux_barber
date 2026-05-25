@@ -15,6 +15,7 @@ python-dotenv
 anthropic
 firebase-admin
 stripe
+resend
 
 # CLI
 typer>=0.12

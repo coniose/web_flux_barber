@@ -1,20 +1,14 @@
-"""Envio de e-mail transacional via SMTP.
+"""Envio de e-mail transacional via Resend (HTTP API — sem SMTP).
 
 Configuração via variáveis de ambiente:
-  MAIL_SERVER    (padrão: smtp.gmail.com)
-  MAIL_PORT      (padrão: 587)
-  MAIL_USERNAME  e-mail remetente
-  MAIL_PASSWORD  senha ou app-password
-  MAIL_FROM      remetente exibido (padrão: MAIL_USERNAME)
+  RESEND_API_KEY   chave da API do Resend
+  MAIL_FROM        remetente exibido (padrão: Flux Barber <onboarding@resend.dev>)
 """
 
 from __future__ import annotations
 
 import logging
 import os
-import smtplib
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
 
 
 def _cfg(key: str, default: str = "") -> str:
@@ -22,31 +16,14 @@ def _cfg(key: str, default: str = "") -> str:
 
 
 def send_password_reset(to_email: str, reset_url: str) -> bool:
-    """Envia e-mail de redefinição de senha. Retorna True se enviado com sucesso."""
-    username = _cfg("MAIL_USERNAME")
-    password = _cfg("MAIL_PASSWORD")
-
-    if not username or not password:
-        logging.warning("MAIL_USERNAME / MAIL_PASSWORD não configurados — e-mail não enviado.")
+    """Envia e-mail de redefinição de senha via Resend. Retorna True se enviado com sucesso."""
+    api_key = _cfg("RESEND_API_KEY")
+    if not api_key:
+        logging.warning("RESEND_API_KEY não configurado — e-mail não enviado.")
         return False
 
-    server   = _cfg("MAIL_SERVER",   "smtp.gmail.com")
-    port     = int(_cfg("MAIL_PORT", "587"))
-    from_    = _cfg("MAIL_FROM", username)
+    from_addr = _cfg("MAIL_FROM", "Flux Barber <onboarding@resend.dev>")
 
-    msg = MIMEMultipart("alternative")
-    msg["Subject"] = "Redefinição de senha — Flux"
-    msg["From"]    = f"Flux <{from_}>"
-    msg["To"]      = to_email
-
-    text = f"""\
-Você solicitou a redefinição de senha no Flux.
-
-Acesse o link abaixo para criar uma nova senha (válido por 1 hora):
-{reset_url}
-
-Se não foi você, ignore este e-mail.
-"""
     html = f"""\
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -76,15 +53,26 @@ Se não foi você, ignore este e-mail.
 </body>
 </html>
 """
-    msg.attach(MIMEText(text, "plain", "utf-8"))
-    msg.attach(MIMEText(html, "html", "utf-8"))
+
+    text = f"""\
+Você solicitou a redefinição de senha no Flux.
+
+Acesse o link abaixo para criar uma nova senha (válido por 1 hora):
+{reset_url}
+
+Se não foi você, ignore este e-mail.
+"""
 
     try:
-        with smtplib.SMTP(server, port, timeout=10) as smtp:
-            smtp.ehlo()
-            smtp.starttls()
-            smtp.login(username, password)
-            smtp.sendmail(from_, to_email, msg.as_string())
+        import resend
+        resend.api_key = api_key
+        resend.Emails.send({
+            "from": from_addr,
+            "to": [to_email],
+            "subject": "Redefinição de senha — Flux",
+            "text": text,
+            "html": html,
+        })
         return True
     except Exception as exc:
         logging.error("Falha ao enviar e-mail de reset para %s: %s", to_email, exc)
