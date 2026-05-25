@@ -34,6 +34,8 @@ const FluxReg = (() => {
 
   // ---------- registro ----------
 
+  const _csrf = document.querySelector('meta[name="csrf-token"]')?.content || '';
+
   async function registrar(type, data, btn) {
     const label = btn ? btn.textContent : '';
     if (btn) { btn.disabled = true; btn.textContent = 'Registrando...'; }
@@ -41,7 +43,7 @@ const FluxReg = (() => {
     try {
       const res = await fetch('/api/sync', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': _csrf },
         body: JSON.stringify({ operations: [{ id: crypto.randomUUID(), type, data }] }),
         credentials: 'same-origin',
       });
