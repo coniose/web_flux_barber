@@ -2,6 +2,23 @@
 {% block title %}Lançar — Flux Barber{% endblock %}
 
 {% block content %}
+<style>
+  .servico-selecionado {
+    background: #1a2e25;
+    border-color: #10b981;
+    box-shadow: 0 0 0 1px rgba(16,185,129,.2);
+  }
+  .servico-selecionado .nome-servico { color: #10b981; }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  #confirm-panel:not(.hidden),
+  #confirm-produto:not(.hidden) {
+    animation: slideIn .2s ease;
+  }
+</style>
 <div class="max-w-5xl mx-auto space-y-6">
 
   <div class="flex items-center justify-between">
@@ -42,7 +59,7 @@
                   data-id="{{ s['id'] }}"
                   class="servico-btn bg-gray-800 hover:bg-gray-700 border border-gray-700 hover:border-brand/50
                          rounded-xl p-3 text-left transition-all group">
-            <p class="text-sm font-medium text-white group-hover:text-brand transition-colors line-clamp-2">{{ s['nome'] }}</p>
+            <p class="nome-servico text-sm font-medium text-white group-hover:text-brand transition-colors line-clamp-2">{{ s['nome'] }}</p>
             <p class="text-xs text-emerald-400 mt-1">R$ {{ "%.2f"|format(s['preco_padrao'] / 100) }}</p>
           </button>
           {% endfor %}
@@ -310,11 +327,11 @@ function selecionarServico(id, preco, nome) {
 
   // Highlight
   document.querySelectorAll('.servico-btn').forEach(b => {
-    b.classList.remove('border-brand', 'bg-gray-700');
+    b.classList.remove('servico-selecionado', 'border-brand', 'bg-gray-700');
     b.classList.add('border-gray-700');
   });
   const btn = document.querySelector(`.servico-btn[data-id="${id}"]`);
-  if (btn) { btn.classList.add('border-brand', 'bg-gray-700'); btn.classList.remove('border-gray-700'); }
+  if (btn) { btn.classList.add('servico-selecionado'); btn.classList.remove('border-gray-700'); }
 
   document.getElementById('confirm-panel').classList.remove('hidden');
   document.getElementById('confirm-panel').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -327,7 +344,7 @@ function selecionarServico(id, preco, nome) {
 function cancelarServico() {
   document.getElementById('confirm-panel').classList.add('hidden');
   document.querySelectorAll('.servico-btn').forEach(b => {
-    b.classList.remove('border-brand', 'bg-gray-700');
+    b.classList.remove('servico-selecionado', 'border-brand', 'bg-gray-700');
     b.classList.add('border-gray-700');
   });
   servicoSelecionadoId = null;
