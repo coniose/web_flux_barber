@@ -154,11 +154,108 @@
     </div>
   </aside>
 
+  <!-- Drawer mobile -->
+  <div id="mobile-drawer-backdrop"
+       class="lg:hidden fixed inset-0 z-40 bg-black/60 hidden"
+       onclick="closeDrawer()"></div>
+
+  <div id="mobile-drawer"
+       class="lg:hidden fixed inset-y-0 left-0 z-50 w-64 bg-gray-800 border-r border-gray-700
+              flex flex-col transform -translate-x-full transition-transform duration-300">
+    <!-- Header do drawer -->
+    <div class="flex items-center justify-between px-6 py-5 border-b border-gray-700">
+      <div class="flex items-center gap-3">
+        <div class="w-8 h-8 rounded-lg bg-brand flex items-center justify-center text-white font-bold text-sm">F</div>
+        <div class="min-w-0">
+          <p class="text-white font-semibold text-sm leading-none">Flux</p>
+          <p class="text-gray-500 text-xs mt-0.5 truncate">{{ nome_negocio }}</p>
+        </div>
+      </div>
+      <button onclick="closeDrawer()" class="text-gray-400 hover:text-white transition-colors">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Nav -->
+    <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+      <a href="{{ url_for('dashboard.index') }}" onclick="closeDrawer()"
+         class="sidebar-item {% if request.endpoint == 'dashboard.index' %}active{% endif %}">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h4a1 1 0 011 1v5a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h4a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM14 5a1 1 0 011-1h4a1 1 0 011 1v3a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM14 12a1 1 0 011-1h4a1 1 0 011 1v6a1 1 0 01-1 1h-4a1 1 0 01-1-1v-6z"/></svg>
+        Dashboard
+      </a>
+      {% if current_user.is_authenticated and current_user.is_pro %}
+      <a href="{{ url_for('chat.index') }}" onclick="closeDrawer()"
+         class="sidebar-item {% if request.endpoint and 'chat' in request.endpoint %}active{% endif %}">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
+        Chat IA
+      </a>
+      {% else %}
+      <a href="{{ url_for('billing.upgrade') }}" onclick="closeDrawer()"
+         class="sidebar-item {% if request.endpoint and 'billing' in request.endpoint %}active{% endif %}">
+        <svg class="w-5 h-5 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+        <span class="opacity-50">Chat IA</span>
+        <span class="ml-auto text-[10px] bg-brand/20 text-brand px-1.5 py-0.5 rounded font-semibold">Pro</span>
+      </a>
+      {% endif %}
+      <a href="{{ url_for('lancamento.index') }}" onclick="closeDrawer()"
+         class="sidebar-item {% if request.endpoint and 'lancamento' in request.endpoint %}active{% endif %}">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+        Lançar
+      </a>
+      <a href="{{ url_for('receitas.index') }}" onclick="closeDrawer()"
+         class="sidebar-item {% if request.endpoint and 'receitas' in request.endpoint %}active{% endif %}">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        Receitas
+      </a>
+      <a href="{{ url_for('despesas.index') }}" onclick="closeDrawer()"
+         class="sidebar-item {% if request.endpoint and 'despesas' in request.endpoint %}active{% endif %}">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+        Despesas
+      </a>
+      <a href="{{ url_for('estoque.index') }}" onclick="closeDrawer()"
+         class="sidebar-item {% if request.endpoint and 'estoque' in request.endpoint %}active{% endif %}">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+        Estoque
+      </a>
+      <a href="{{ url_for('config.index') }}" onclick="closeDrawer()"
+         class="sidebar-item {% if request.endpoint and 'config' in request.endpoint %}active{% endif %}">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+        Configurações
+      </a>
+    </nav>
+
+    <!-- User -->
+    <div class="px-3 py-4 border-t border-gray-700">
+      {% if current_user.is_authenticated %}
+      <div class="flex items-center gap-3 px-3 py-2">
+        <div class="w-7 h-7 rounded-full bg-brand/20 border border-brand/40 flex items-center justify-center text-brand text-xs font-bold">
+          {{ current_user.nome[0].upper() }}
+        </div>
+        <div class="flex-1 min-w-0">
+          <p class="text-sm text-white truncate">{{ current_user.nome }}</p>
+          <p class="text-xs text-gray-500">{{ 'Pro' if current_user.is_pro else 'Grátis' }}</p>
+        </div>
+        <a href="{{ url_for('auth.logout') }}" onclick="sessionStorage.removeItem('flux_chat_history')"
+           class="text-gray-500 hover:text-red-400 transition-colors" title="Sair">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+        </a>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
   <!-- Main content -->
   <div class="flex-1 flex flex-col min-h-0 overflow-auto">
     <!-- Mobile header -->
     <header class="lg:hidden flex items-center justify-between px-4 py-3 bg-gray-800 border-b border-gray-700">
       <div class="flex items-center gap-2">
+        <button onclick="openDrawer()" class="text-gray-400 hover:text-white transition-colors mr-1">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+          </svg>
+        </button>
         <div class="w-7 h-7 rounded-lg bg-brand flex items-center justify-center text-white font-bold text-xs">F</div>
         <span class="text-white font-semibold text-sm">Flux</span>
       </div>
@@ -172,6 +269,19 @@
     </main>
   </div>
 </div>
+
+<script>
+  function openDrawer() {
+    document.getElementById('mobile-drawer').classList.remove('-translate-x-full');
+    document.getElementById('mobile-drawer-backdrop').classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeDrawer() {
+    document.getElementById('mobile-drawer').classList.add('-translate-x-full');
+    document.getElementById('mobile-drawer-backdrop').classList.add('hidden');
+    document.body.style.overflow = '';
+  }
+</script>
 {% endblock %}
 
 <script src="{{ url_for('static', filename='js/sync.js') }}"></script>
