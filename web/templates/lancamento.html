@@ -8,7 +8,9 @@
     border-color: #10b981;
     box-shadow: 0 0 0 1px rgba(16,185,129,.2);
   }
-  .servico-selecionado .nome-servico { color: #10b981; }
+  .servico-selecionado .nome-servico,
+  .servico-selecionado .nome-produto,
+  .servico-selecionado .nome-item { color: #10b981; }
 
   @keyframes slideIn {
     from { opacity: 0; transform: translateY(6px); }
@@ -140,7 +142,7 @@
                          rounded-xl p-3 text-left transition-all group
                          {% if p['quantidade_estoque'] == 0 %}opacity-40 cursor-not-allowed{% endif %}"
                   {% if p['quantidade_estoque'] == 0 %}disabled{% endif %}>
-            <p class="text-sm font-medium text-white group-hover:text-brand transition-colors line-clamp-2">{{ p['nome'] }}</p>
+            <p class="nome-produto text-sm font-medium text-white group-hover:text-brand transition-colors line-clamp-2">{{ p['nome'] }}</p>
             <p class="text-xs text-emerald-400 mt-1">R$ {{ "%.2f"|format(p['preco_venda'] / 100) }}</p>
             <p class="text-xs text-gray-500 mt-0.5">{{ p['quantidade_estoque'] }} em estoque</p>
           </button>
@@ -193,17 +195,19 @@
 
   <!-- Aba Despesa -->
   <div id="panel-despesa" class="hidden">
-    <div class="grid lg:grid-cols-2 gap-6">
+    <div class="space-y-5">
 
       <!-- Itens frequentes -->
+      {% if itens %}
       <div>
         <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Itens frequentes</p>
-        <div class="grid grid-cols-2 gap-2">
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
           {% for item in itens %}
           <button type="button"
                   onclick="preencherItem({{ item['categoria_id'] }}, '{{ item['descricao'] | e }}', {{ item['valor_sugerido'] or 0 }}, {{ item['id'] }})"
-                  class="bg-gray-800 hover:bg-gray-700 border border-gray-700 hover:border-brand/40 rounded-xl p-3 text-left transition-all">
-            <p class="text-xs font-medium text-white">{{ item['cat_icone'] }} {{ item['descricao'] }}</p>
+                  data-item-id="{{ item['id'] }}"
+                  class="item-btn bg-gray-800 hover:bg-gray-700 border border-gray-700 hover:border-brand/50 rounded-xl p-3 text-left transition-all group">
+            <p class="nome-item text-xs font-medium text-white group-hover:text-brand transition-colors">{{ item['cat_icone'] }} {{ item['descricao'] }}</p>
             {% if item['valor_sugerido'] %}
             <p class="text-xs text-emerald-400 mt-0.5">R$ {{ "%.2f"|format(item['valor_sugerido'] / 100) }}</p>
             {% endif %}
@@ -211,6 +215,7 @@
           {% endfor %}
         </div>
       </div>
+      {% endif %}
 
       <!-- Formulário de despesa -->
       <div>
@@ -300,11 +305,11 @@ function selecionarProduto(id, preco, nome, estoque) {
   document.getElementById('confirm-prod-nome').textContent = nome;
 
   document.querySelectorAll('.produto-btn').forEach(b => {
-    b.classList.remove('border-brand', 'bg-gray-700');
+    b.classList.remove('servico-selecionado', 'border-brand', 'bg-gray-700');
     b.classList.add('border-gray-700');
   });
   const btn = document.querySelector(`.produto-btn[data-pid="${id}"]`);
-  if (btn) { btn.classList.add('border-brand', 'bg-gray-700'); btn.classList.remove('border-gray-700'); }
+  if (btn) { btn.classList.add('servico-selecionado'); btn.classList.remove('border-gray-700'); }
 
   document.getElementById('confirm-produto').classList.remove('hidden');
   document.getElementById('confirm-produto').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -313,7 +318,7 @@ function selecionarProduto(id, preco, nome, estoque) {
 function cancelarProduto() {
   document.getElementById('confirm-produto').classList.add('hidden');
   document.querySelectorAll('.produto-btn').forEach(b => {
-    b.classList.remove('border-brand', 'bg-gray-700');
+    b.classList.remove('servico-selecionado', 'border-brand', 'bg-gray-700');
     b.classList.add('border-gray-700');
   });
 }
@@ -377,6 +382,13 @@ function preencherItem(catId, descricao, valor, itemId) {
   document.getElementById('descricao_input').value = descricao;
   document.getElementById('item_id_input').value = itemId;
   if (valor > 0) document.getElementById('valor_desp_input').value = (valor / 100).toFixed(2);
+
+  document.querySelectorAll('.item-btn').forEach(b => {
+    b.classList.remove('servico-selecionado', 'border-brand', 'bg-gray-700');
+    b.classList.add('border-gray-700');
+  });
+  const btn = document.querySelector(`.item-btn[data-item-id="${itemId}"]`);
+  if (btn) { btn.classList.add('servico-selecionado'); btn.classList.remove('border-gray-700'); }
 }
 
 // ── Registro direto: fetch imediato, sem fila ──
@@ -439,6 +451,10 @@ document.getElementById('form-despesa').addEventListener('submit', async functio
     document.querySelectorAll('.desp-forma-btn').forEach(b => {
       b.classList.remove('border-brand', 'text-brand', 'bg-brand/10');
       b.classList.add('border-gray-600', 'text-gray-400');
+    });
+    document.querySelectorAll('.item-btn').forEach(b => {
+      b.classList.remove('servico-selecionado', 'border-brand', 'bg-gray-700');
+      b.classList.add('border-gray-700');
     });
   } else {
     FluxReg.showToast('Erro ao registrar. Verifique sua conexão.', 'error');
