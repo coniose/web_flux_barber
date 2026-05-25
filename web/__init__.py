@@ -11,6 +11,7 @@ from authlib.integrations.flask_client import OAuth
 from dotenv import load_dotenv
 from flask import Flask, Response
 from flask_login import LoginManager
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 from app.repositories.db import ensure_db
 
@@ -23,6 +24,7 @@ oauth = OAuth()
 
 def create_app(test_config: dict | None = None) -> Flask:
     app = Flask(__name__, template_folder="templates", static_folder="static")
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 
     secret_key = os.environ.get("SECRET_KEY")
     if not secret_key:
