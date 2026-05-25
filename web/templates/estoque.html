@@ -44,6 +44,14 @@
     </div>
   </div>
 
+  {% if resumo.vendas.total == 0 and resumo.compras.total == 0 and produtos %}
+  <div class="flex items-center gap-3 px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-xl text-sm text-gray-500">
+    <svg class="w-4 h-4 shrink-0 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+    <span>Nenhuma movimentação neste mês. Os valores acima serão preenchidos conforme você registrar compras e vendas.</span>
+    <a href="{{ url_for('lancamento.index') }}" class="text-brand hover:text-emerald-400 ml-auto shrink-0 whitespace-nowrap">Lançar →</a>
+  </div>
+  {% endif %}
+
   <div class="grid lg:grid-cols-3 gap-4">
 
     <!-- Catálogo de produtos -->

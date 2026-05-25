@@ -6,16 +6,63 @@
 
   <h1 class="text-xl font-bold text-white">Configurações</h1>
 
-  <!-- Tab nav -->
+  <!-- Tab nav principal (4 grupos) -->
   <div class="flex gap-1 bg-gray-800 rounded-xl p-1 border border-gray-700 overflow-x-auto">
-    {% for t, label in [('negocio','Negócio'),('servicos','Serviços'),('categorias','Categorias'),('itens','Itens'),('produtos','Produtos'),('conta','Conta')] %}
-    <a href="{{ url_for('config.index', tab=t) }}"
+    {% set grupo_catalogo = tab in ['servicos', 'produtos'] %}
+    {% set grupo_despesas = tab in ['categorias', 'itens'] %}
+    <a href="{{ url_for('config.index', tab='negocio') }}"
        class="px-4 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap
-              {{ 'text-white bg-gray-700' if tab == t else 'text-gray-400 hover:text-white' }}">
-      {{ label }}
+              {{ 'text-white bg-gray-700' if tab == 'negocio' else 'text-gray-400 hover:text-white' }}">
+      Negócio
     </a>
-    {% endfor %}
+    <a href="{{ url_for('config.index', tab='servicos') }}"
+       class="px-4 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap
+              {{ 'text-white bg-gray-700' if grupo_catalogo else 'text-gray-400 hover:text-white' }}">
+      Catálogo
+    </a>
+    <a href="{{ url_for('config.index', tab='categorias') }}"
+       class="px-4 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap
+              {{ 'text-white bg-gray-700' if grupo_despesas else 'text-gray-400 hover:text-white' }}">
+      Despesas
+    </a>
+    <a href="{{ url_for('config.index', tab='conta') }}"
+       class="px-4 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap
+              {{ 'text-white bg-gray-700' if tab == 'conta' else 'text-gray-400 hover:text-white' }}">
+      Conta
+    </a>
   </div>
+
+  <!-- Sub-tabs: Catálogo -->
+  {% if grupo_catalogo %}
+  <div class="flex gap-1 bg-gray-700/40 rounded-lg p-1 w-fit border border-gray-700/60">
+    <a href="{{ url_for('config.index', tab='servicos') }}"
+       class="px-3 py-1.5 text-xs font-medium rounded-md transition-colors whitespace-nowrap
+              {{ 'text-white bg-gray-600' if tab == 'servicos' else 'text-gray-400 hover:text-white' }}">
+      Serviços
+    </a>
+    <a href="{{ url_for('config.index', tab='produtos') }}"
+       class="px-3 py-1.5 text-xs font-medium rounded-md transition-colors whitespace-nowrap
+              {{ 'text-white bg-gray-600' if tab == 'produtos' else 'text-gray-400 hover:text-white' }}">
+      Produtos
+    </a>
+  </div>
+  {% endif %}
+
+  <!-- Sub-tabs: Despesas -->
+  {% if grupo_despesas %}
+  <div class="flex gap-1 bg-gray-700/40 rounded-lg p-1 w-fit border border-gray-700/60">
+    <a href="{{ url_for('config.index', tab='categorias') }}"
+       class="px-3 py-1.5 text-xs font-medium rounded-md transition-colors whitespace-nowrap
+              {{ 'text-white bg-gray-600' if tab == 'categorias' else 'text-gray-400 hover:text-white' }}">
+      Categorias
+    </a>
+    <a href="{{ url_for('config.index', tab='itens') }}"
+       class="px-3 py-1.5 text-xs font-medium rounded-md transition-colors whitespace-nowrap
+              {{ 'text-white bg-gray-600' if tab == 'itens' else 'text-gray-400 hover:text-white' }}">
+      Itens frequentes
+    </a>
+  </div>
+  {% endif %}
 
   {# ── Negócio ────────────────────────────────────────────────────────────── #}
   {% if tab == 'negocio' %}
