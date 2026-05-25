@@ -68,8 +68,26 @@
   <!-- ── Seção 2: Período ── -->
   <div>
     <!-- Filtro de data -->
-    <div class="flex items-center gap-3 mb-4 flex-wrap">
-      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Período</p>
+    <div class="mb-4">
+      <!-- Linha 1: label + atalhos rápidos (aparecem primeiro no mobile) -->
+      <div class="flex items-center gap-2 mb-3 flex-wrap">
+        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Período</p>
+        <div class="flex gap-1.5">
+          <a href="{{ url_for('dashboard.index', de=hoje.isoformat(), ate=hoje.isoformat()) }}"
+             class="px-2.5 py-1.5 text-xs rounded-lg border border-gray-700 text-gray-400 hover:text-white hover:border-gray-500 transition-colors">
+            Hoje
+          </a>
+          <a href="{{ url_for('dashboard.index', de=inicio_semana.isoformat(), ate=hoje.isoformat()) }}"
+             class="px-2.5 py-1.5 text-xs rounded-lg border border-gray-700 text-gray-400 hover:text-white hover:border-gray-500 transition-colors">
+            Semana
+          </a>
+          <a href="{{ url_for('dashboard.index', de=hoje.replace(day=1).isoformat(), ate=hoje.isoformat()) }}"
+             class="px-2.5 py-1.5 text-xs rounded-lg border border-gray-700 text-gray-400 hover:text-white hover:border-gray-500 transition-colors">
+            Mês
+          </a>
+        </div>
+      </div>
+      <!-- Linha 2: seletor de intervalo personalizado -->
       <form method="GET" action="{{ url_for('dashboard.index') }}" class="flex items-center gap-2 flex-wrap">
         <input type="date" name="de" value="{{ de.isoformat() }}"
                class="bg-gray-800 border border-gray-700 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-brand">
@@ -80,19 +98,6 @@
                 class="px-3 py-1.5 bg-brand hover:bg-emerald-600 text-white text-sm font-medium rounded-lg transition-colors">
           Filtrar
         </button>
-        <!-- Atalhos rápidos -->
-        <a href="{{ url_for('dashboard.index', de=hoje.isoformat(), ate=hoje.isoformat()) }}"
-           class="px-2.5 py-1.5 text-xs rounded-lg border border-gray-700 text-gray-400 hover:text-white hover:border-gray-500 transition-colors">
-          Hoje
-        </a>
-        <a href="{{ url_for('dashboard.index', de=inicio_semana.isoformat(), ate=hoje.isoformat()) }}"
-           class="px-2.5 py-1.5 text-xs rounded-lg border border-gray-700 text-gray-400 hover:text-white hover:border-gray-500 transition-colors">
-          Semana
-        </a>
-        <a href="{{ url_for('dashboard.index', de=hoje.replace(day=1).isoformat(), ate=hoje.isoformat()) }}"
-           class="px-2.5 py-1.5 text-xs rounded-lg border border-gray-700 text-gray-400 hover:text-white hover:border-gray-500 transition-colors">
-          Mês
-        </a>
       </form>
     </div>
 

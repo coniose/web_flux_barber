@@ -16,6 +16,9 @@ const FluxReg = (() => {
     const toast = document.createElement('div');
     toast.className = `flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg text-sm font-medium border ${colors[type] || colors.info}`;
     toast.innerHTML = `<svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">${icon}</svg>${msg}`;
+    toast.style.transform = 'translateX(110%)';
+    toast.style.opacity = '0';
+    toast.style.transition = 'transform 0.3s ease, opacity 0.3s ease';
 
     let container = document.getElementById('toast-container');
     if (!container) {
@@ -25,10 +28,16 @@ const FluxReg = (() => {
       document.body.appendChild(container);
     }
     container.appendChild(toast);
+
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      toast.style.transform = 'translateX(0)';
+      toast.style.opacity = '1';
+    }));
+
     setTimeout(() => {
+      toast.style.transform = 'translateX(110%)';
       toast.style.opacity = '0';
-      toast.style.transition = 'opacity 0.4s';
-      setTimeout(() => toast.remove(), 400);
+      setTimeout(() => toast.remove(), 300);
     }, 3000);
   }
 

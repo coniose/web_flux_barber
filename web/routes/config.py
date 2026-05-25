@@ -39,6 +39,7 @@ def index():
         "tipo_trabalho": config_repo.get_config(conn, "tipo_trabalho") or "ambos",
         "formas_pagamento": (config_repo.get_config(conn, "formas_pagamento") or "PIX,DINHEIRO,MAQUININHA").split(","),
         "horario_trabalho": config_repo.get_config(conn, "horario_trabalho") or "",
+        "forma_pagamento_padrao": config_repo.get_config(conn, "forma_pagamento_padrao") or "PIX",
     }
     return render_template(
         "config.html",
@@ -310,12 +311,16 @@ def negocio_update():
             tipo = "ambos"
         formas_validas = {"PIX", "DINHEIRO", "MAQUININHA"}
         formas = [f for f in formas if f in formas_validas] or ["PIX", "DINHEIRO", "MAQUININHA"]
+        forma_padrao = request.form.get("forma_pagamento_padrao", "PIX")
+        if forma_padrao not in formas_validas:
+            forma_padrao = "PIX"
 
         config_repo.set_config(conn, "nome_negocio", nome)
         config_repo.set_config(conn, "descricao_negocio", descricao)
         config_repo.set_config(conn, "tipo_trabalho", tipo)
         config_repo.set_config(conn, "formas_pagamento", ",".join(formas))
         config_repo.set_config(conn, "horario_trabalho", horario)
+        config_repo.set_config(conn, "forma_pagamento_padrao", forma_padrao)
         flash("Perfil do negócio atualizado.", "success")
     except (ValidacaoError, ValueError) as e:
         flash(str(e), "error")

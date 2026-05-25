@@ -108,16 +108,18 @@ def _register_context_processors(app) -> None:
     @app.context_processor
     def inject_negocio():
         if not current_user.is_authenticated:
-            return {"nome_negocio": "Flux"}
+            return {"nome_negocio": "Flux", "config_forma_padrao": "PIX"}
         try:
             from app.repositories.sql import config_repo
             from web.models import get_user_conn
             conn = get_user_conn()
             nome = config_repo.get_config(conn, "nome_negocio") or "Flux"
+            forma_padrao = config_repo.get_config(conn, "forma_pagamento_padrao") or "PIX"
             conn.close()
         except Exception:
             nome = "Flux"
-        return {"nome_negocio": nome}
+            forma_padrao = "PIX"
+        return {"nome_negocio": nome, "config_forma_padrao": forma_padrao}
 
 
 def _register_onboarding_gate(app) -> None:

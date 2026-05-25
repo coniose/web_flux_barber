@@ -25,7 +25,7 @@
     .sidebar-item.active { @apply text-white bg-gray-700; }
   </style>
 </head>
-<body class="h-full bg-gray-900 text-gray-100" data-default-forma="PIX">
+<body class="h-full bg-gray-900 text-gray-100" data-default-forma="{{ config_forma_padrao or 'PIX' }}">
 
 {% with messages = get_flashed_messages(with_categories=true) %}
   {% if messages %}
