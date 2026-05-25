@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nova senha — Flux</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: { extend: { colors: { brand: { DEFAULT: '#10b981', dark: '#059669' } } } }
+    }
+  </script>
+</head>
+<body class="h-full bg-gray-900 flex items-center justify-center p-4">
+
+<div class="w-full max-w-sm">
+  <div class="text-center mb-8">
+    <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-brand mb-4">
+      <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+          d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+      </svg>
+    </div>
+    <h1 class="text-2xl font-bold text-white">Nova senha</h1>
+    <p class="text-gray-400 text-sm mt-1">Escolha uma senha com ao menos 6 caracteres</p>
+  </div>
+
+  <div class="bg-gray-800 rounded-2xl border border-gray-700 p-8">
+    {% if erro %}
+    <div class="mb-4 flex items-center gap-3 px-4 py-3 rounded-lg bg-red-500/20 border border-red-500/40 text-red-300 text-sm">
+      <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+      </svg>
+      {{ erro }}
+    </div>
+    {% endif %}
+
+    <form method="POST" class="space-y-4">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+      <div>
+        <label for="senha" class="block text-sm font-medium text-gray-300 mb-1.5">Nova senha</label>
+        <input
+          type="password" id="senha" name="senha" required autocomplete="new-password" autofocus
+          minlength="6"
+          class="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2.5 text-sm text-white
+                 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent transition"
+          placeholder="••••••">
+      </div>
+
+      <div>
+        <label for="confirmar" class="block text-sm font-medium text-gray-300 mb-1.5">Confirmar senha</label>
+        <input
+          type="password" id="confirmar" name="confirmar" required autocomplete="new-password"
+          minlength="6"
+          class="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2.5 text-sm text-white
+                 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent transition"
+          placeholder="••••••">
+      </div>
+
+      <button type="submit"
+              class="w-full bg-brand hover:bg-brand-dark text-white font-semibold rounded-lg py-2.5 text-sm
+                     transition-colors focus:outline-none focus:ring-2 focus:ring-brand focus:ring-offset-2 focus:ring-offset-gray-800">
+        Salvar nova senha
+      </button>
+    </form>
+  </div>
+</div>
+
+</body>
+</html>

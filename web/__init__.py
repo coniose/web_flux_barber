@@ -231,8 +231,7 @@ def _ensure_usuario_table(conn) -> None:
             google_id              TEXT    UNIQUE,
             auth_provider          TEXT    NOT NULL DEFAULT 'email'
         );
-        CREATE INDEX IF NOT EXISTS idx_usuario_email    ON usuario(email);
-        CREATE INDEX IF NOT EXISTS idx_usuario_google   ON usuario(google_id);
+        CREATE INDEX IF NOT EXISTS idx_usuario_email ON usuario(email);
     """)
     # Tabela de idempotência para webhooks Stripe
     conn.executescript("""
@@ -241,6 +240,18 @@ def _ensure_usuario_table(conn) -> None:
             tipo          TEXT NOT NULL,
             processado_em TEXT NOT NULL DEFAULT (datetime('now'))
         );
+    """)
+    # Tokens de redefinição de senha
+    conn.executescript("""
+        CREATE TABLE IF NOT EXISTS password_reset_token (
+            id         INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id    INTEGER NOT NULL,
+            token      TEXT    NOT NULL UNIQUE,
+            expira_em  TEXT    NOT NULL,
+            usado      INTEGER NOT NULL DEFAULT 0,
+            criado_em  TEXT    NOT NULL DEFAULT (datetime('now'))
+        );
+        CREATE INDEX IF NOT EXISTS idx_prt_token ON password_reset_token(token);
     """)
     # Rastreamento de consumo de tokens por usuário
     conn.executescript("""

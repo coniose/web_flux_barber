@@ -1,10 +1,14 @@
-"""Rotas de autenticação: login, register, logout."""
+"""Rotas de autenticação: login, register, logout, recuperação de senha."""
 
 from __future__ import annotations
+
+import secrets
+from datetime import datetime, timedelta, timezone
 
 from flask import Blueprint, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required, login_user, logout_user
 
+from app.repositories.db import get_connection
 from web.models import User
 
 auth_bp = Blueprint("auth", __name__, url_prefix="/auth")
@@ -86,3 +90,91 @@ def register():
 def logout():
     logout_user()
     return redirect(url_for("auth.login"))
+
+
+# ──────────────────────────────── Esqueci minha senha ────────────────────────
+
+
+@auth_bp.route("/esqueci-senha", methods=["GET", "POST"])
+def esqueci_senha():
+    if current_user.is_authenticated:
+        return redirect(url_for("dashboard.index"))
+
+    if request.method == "POST":
+        email = request.form.get("email", "").strip().lower()
+        user = User.get_by_email(email)
+
+        if user and user.auth_provider == "email":
+            token = secrets.token_urlsafe(32)
+            expira = datetime.now(timezone.utc) + timedelta(hours=1)
+
+            conn = get_connection()
+            conn.execute(
+                "INSERT INTO password_reset_token (user_id, token, expira_em) VALUES (?, ?, ?)",
+                (user.id, token, expira.strftime("%Y-%m-%d %H:%M:%S")),
+            )
+            conn.close()
+
+            reset_url = url_for("auth.redefinir_senha", token=token, _external=True)
+            from web.auth.email import send_password_reset
+            send_password_reset(user.email, reset_url)
+
+        # Sempre exibe a mesma mensagem — não revela se o e-mail existe
+        flash("Se esse e-mail estiver cadastrado, você receberá um link em instantes.", "info")
+        return redirect(url_for("auth.login"))
+
+    return render_template("auth/esqueci_senha.html")
+
+
+@auth_bp.route("/redefinir-senha/<token>", methods=["GET", "POST"])
+def redefinir_senha(token: str):
+    if current_user.is_authenticated:
+        return redirect(url_for("dashboard.index"))
+
+    conn = get_connection()
+    row = conn.execute(
+        "SELECT * FROM password_reset_token WHERE token = ? AND usado = 0",
+        (token,),
+    ).fetchone()
+
+    if not row:
+        conn.close()
+        flash("Link inválido ou já utilizado.", "error")
+        return redirect(url_for("auth.login"))
+
+    expira = datetime.strptime(row["expira_em"], "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
+    if datetime.now(timezone.utc) > expira:
+        conn.close()
+        flash("Link expirado. Solicite um novo.", "error")
+        return redirect(url_for("auth.esqueci_senha"))
+
+    if request.method == "POST":
+        nova = request.form.get("senha", "")
+        confirmar = request.form.get("confirmar", "")
+
+        if len(nova) < 6:
+            conn.close()
+            return render_template("auth/redefinir_senha.html", token=token,
+                                   erro="A senha deve ter ao menos 6 caracteres.")
+        if nova != confirmar:
+            conn.close()
+            return render_template("auth/redefinir_senha.html", token=token,
+                                   erro="As senhas não coincidem.")
+
+        from werkzeug.security import generate_password_hash
+        novo_hash = generate_password_hash(nova)
+        conn.execute(
+            "UPDATE usuario SET senha_hash = ? WHERE id = ?",
+            (novo_hash, row["user_id"]),
+        )
+        conn.execute(
+            "UPDATE password_reset_token SET usado = 1 WHERE token = ?",
+            (token,),
+        )
+        conn.close()
+
+        flash("Senha redefinida com sucesso! Faça login.", "success")
+        return redirect(url_for("auth.login"))
+
+    conn.close()
+    return render_template("auth/redefinir_senha.html", token=token)
