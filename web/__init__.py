@@ -218,18 +218,21 @@ def _ensure_usuario_table(conn) -> None:
     conn.executescript("""
         CREATE TABLE IF NOT EXISTS usuario (
             id                     INTEGER PRIMARY KEY AUTOINCREMENT,
-            email                  TEXT    NOT NULL UNIQUE,
+            email                  TEXT    UNIQUE,
             nome                   TEXT    NOT NULL,
-            senha_hash             TEXT    NOT NULL,
+            senha_hash             TEXT,
             plano                  TEXT    NOT NULL DEFAULT 'free'
                                            CHECK (plano IN ('free', 'pro')),
             device_id              TEXT,
             stripe_customer_id     TEXT,
             stripe_subscription_id TEXT,
             criado_em              TEXT    NOT NULL DEFAULT (datetime('now')),
-            ultimo_acesso          TEXT
+            ultimo_acesso          TEXT,
+            google_id              TEXT    UNIQUE,
+            auth_provider          TEXT    NOT NULL DEFAULT 'email'
         );
-        CREATE INDEX IF NOT EXISTS idx_usuario_email ON usuario(email);
+        CREATE INDEX IF NOT EXISTS idx_usuario_email    ON usuario(email);
+        CREATE INDEX IF NOT EXISTS idx_usuario_google   ON usuario(google_id);
     """)
     # Tabela de idempotência para webhooks Stripe
     conn.executescript("""
@@ -258,8 +261,15 @@ def _ensure_usuario_table(conn) -> None:
         "ALTER TABLE usuario ADD COLUMN stripe_customer_id TEXT",
         "ALTER TABLE usuario ADD COLUMN stripe_subscription_id TEXT",
         "ALTER TABLE usuario ADD COLUMN plano_verificado_em TEXT",
+        "ALTER TABLE usuario ADD COLUMN google_id TEXT",
+        "ALTER TABLE usuario ADD COLUMN auth_provider TEXT NOT NULL DEFAULT 'email'",
     ]:
         try:
             conn.execute(migration)
         except Exception:
             pass  # coluna já existe
+
+    try:
+        conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_usuario_google ON usuario(google_id)")
+    except Exception:
+        pass
