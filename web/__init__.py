@@ -7,6 +7,7 @@ import os
 import secrets
 from pathlib import Path
 
+from authlib.integrations.flask_client import OAuth
 from dotenv import load_dotenv
 from flask import Flask, Response
 from flask_login import LoginManager
@@ -17,6 +18,7 @@ from app.repositories.db import ensure_db
 load_dotenv(Path(__file__).parent.parent / ".env")
 
 login_manager = LoginManager()
+oauth = OAuth()
 
 
 def create_app(test_config: dict | None = None) -> Flask:
@@ -49,12 +51,23 @@ def create_app(test_config: dict | None = None) -> Flask:
     conn.close()
 
     app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
-    app.config["SESSION_COOKIE_SECURE"] = True
+    # Secure apenas em produção — local usa HTTP, Railway seta RAILWAY_ENVIRONMENT
+    app.config["SESSION_COOKIE_SECURE"] = bool(os.environ.get("RAILWAY_ENVIRONMENT"))
     app.config["SESSION_COOKIE_HTTPONLY"] = True
 
     from web.extensions import csrf, limiter
     csrf.init_app(app)
     limiter.init_app(app)
+
+    # Google OAuth
+    oauth.init_app(app)
+    oauth.register(
+        name="google",
+        client_id=os.environ.get("GOOGLE_CLIENT_ID", ""),
+        client_secret=os.environ.get("GOOGLE_CLIENT_SECRET", ""),
+        server_metadata_url="https://accounts.google.com/.well-known/openid-configuration",
+        client_kwargs={"scope": "openid email profile"},
+    )
 
     login_manager.init_app(app)
     login_manager.login_view = "auth.login"
@@ -235,6 +248,16 @@ def _ensure_usuario_table(conn) -> None:
         );
         CREATE INDEX IF NOT EXISTS idx_usuario_email ON usuario(email);
     """)
+    # Migração: garante colunas OAuth em DBs criados antes da feature
+    for col, definition in [
+        ("google_id", "TEXT"),
+        ("auth_provider", "TEXT NOT NULL DEFAULT 'email'"),
+        ("plano_verificado_em", "TEXT"),
+    ]:
+        try:
+            conn.execute(f"ALTER TABLE usuario ADD COLUMN {col} {definition}")
+        except Exception:
+            pass  # coluna já existe
     # Tabela de idempotência para webhooks Stripe
     conn.executescript("""
         CREATE TABLE IF NOT EXISTS stripe_events (

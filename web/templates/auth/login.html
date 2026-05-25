@@ -3,96 +3,285 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Login — Flux Barber</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      theme: { extend: { colors: { brand: { DEFAULT: '#10b981', dark: '#059669' } } } }
+  <title>Login — Flux</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700&family=IBM+Plex+Sans:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg:      #08080f;
+      --surface: #0e0e1c;
+      --border:  #1c1c30;
+      --accent:  #f0922a;
+      --accent-dim: rgba(240,146,42,0.08);
+      --text-pri:  #e8e8f0;
+      --text-sec:  #9191b0;
+      --text-muted:#4a4966;
     }
-  </script>
+    body {
+      min-height: 100vh;
+      background: var(--bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 16px;
+      font-family: 'IBM Plex Sans', sans-serif;
+      color: var(--text-pri);
+    }
+    .container { width: 100%; max-width: 360px; }
+    .logo-wrap {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+    .logo-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 48px; height: 48px;
+      background: var(--accent);
+      border-radius: 12px;
+      margin-bottom: 14px;
+    }
+    .logo-title {
+      font-family: 'Syne', sans-serif;
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.025em;
+      color: var(--text-pri);
+    }
+    .logo-sub {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 28px 24px;
+    }
+    .card-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text-pri);
+      margin-bottom: 22px;
+    }
+
+    /* Google button */
+    .btn-google {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      width: 100%;
+      padding: 10px 16px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-pri);
+      text-decoration: none;
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+      font-family: 'IBM Plex Sans', sans-serif;
+      margin-bottom: 18px;
+    }
+    .btn-google:hover {
+      border-color: #3a3a55;
+      background: rgba(255,255,255,0.03);
+    }
+
+    /* Divider */
+    .divider {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+    .divider::before, .divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+    .divider span {
+      font-size: 11px;
+      color: var(--text-muted);
+      white-space: nowrap;
+    }
+
+    /* Form */
+    label {
+      display: block;
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--text-sec);
+      margin-bottom: 6px;
+    }
+    input[type="email"],
+    input[type="password"],
+    input[type="text"] {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      padding: 9px 12px;
+      font-size: 13px;
+      color: var(--text-pri);
+      font-family: 'IBM Plex Sans', sans-serif;
+      outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+      margin-bottom: 14px;
+    }
+    input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(240,146,42,0.12);
+    }
+    .row-between {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 18px;
+      margin-top: -6px;
+    }
+    .remember {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 12px;
+      color: var(--text-muted);
+      cursor: pointer;
+    }
+    .remember input { width: auto; margin: 0; accent-color: var(--accent); }
+    .link-muted {
+      font-size: 12px;
+      color: var(--text-muted);
+      text-decoration: none;
+      transition: color 0.12s;
+    }
+    .link-muted:hover { color: var(--text-sec); }
+
+    .btn-primary {
+      width: 100%;
+      padding: 10px 16px;
+      background: var(--accent);
+      color: #09060a;
+      font-size: 13px;
+      font-weight: 700;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-family: 'IBM Plex Sans', sans-serif;
+      transition: opacity 0.15s;
+    }
+    .btn-primary:hover { opacity: 0.88; }
+
+    .footer-text {
+      text-align: center;
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 18px;
+    }
+    .link-accent {
+      color: var(--accent);
+      text-decoration: none;
+      font-weight: 500;
+    }
+    .link-accent:hover { opacity: 0.8; }
+
+    /* Flash messages */
+    .flashes {
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      z-index: 50;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-width: 320px;
+    }
+    .flash {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+    }
+    .flash-error   { background: rgba(240,82,82,0.10);  border: 1px solid rgba(240,82,82,0.28);  color: #f9a8a8; }
+    .flash-success { background: rgba(34,211,160,0.10); border: 1px solid rgba(34,211,160,0.28); color: #86efcf; }
+    .flash-info    { background: rgba(106,154,244,0.10);border: 1px solid rgba(106,154,244,0.28);color: #bfcffd; }
+  </style>
 </head>
-<body class="h-full bg-gray-900 flex items-center justify-center p-4">
+<body>
 
 {% with messages = get_flashed_messages(with_categories=true) %}
   {% if messages %}
-    <div class="fixed top-4 right-4 z-50 flex flex-col gap-2">
-      {% for category, message in messages %}
-        <div class="flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg text-sm font-medium
-          {% if category == 'error' %}bg-red-500/20 border border-red-500/40 text-red-300
-          {% else %}bg-emerald-500/20 border border-emerald-500/40 text-emerald-300{% endif %}">
-          {{ message }}
-        </div>
-      {% endfor %}
+  <div class="flashes">
+    {% for category, message in messages %}
+    <div class="flash flash-{{ 'error' if category == 'error' else 'success' if category == 'success' else 'info' }}">
+      {{ message }}
     </div>
+    {% endfor %}
+  </div>
   {% endif %}
 {% endwith %}
 
-<div class="w-full max-w-sm">
+<div class="container">
   <!-- Logo -->
-  <div class="text-center mb-8">
-    <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-brand mb-4">
-      <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-          d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/>
+  <div class="logo-wrap">
+    <div class="logo-icon">
+      <svg width="20" height="20" viewBox="0 0 14 14" fill="none">
+        <path d="M2 7h10M7 2v10" stroke="#09060a" stroke-width="2.5" stroke-linecap="round"/>
       </svg>
     </div>
-    <h1 class="text-2xl font-bold text-white">Flux Barber</h1>
-    <p class="text-gray-400 text-sm mt-1">Controle financeiro da sua barbearia</p>
+    <p class="logo-title">flux</p>
+    <p class="logo-sub">Controle financeiro da sua barbearia</p>
   </div>
 
-  <!-- Card -->
-  <div class="bg-gray-800 rounded-2xl border border-gray-700 p-8">
-    <h2 class="text-lg font-semibold text-white mb-6">Entrar na conta</h2>
+  <div class="card">
+    <p class="card-title">Entrar na conta</p>
 
-    <form method="POST" class="space-y-4">
+    <!-- Google OAuth -->
+    <a href="{{ url_for('auth.google_login') }}" class="btn-google">
+      <svg width="18" height="18" viewBox="0 0 48 48">
+        <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+        <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+        <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+        <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.35-8.16 2.35-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+        <path fill="none" d="M0 0h48v48H0z"/>
+      </svg>
+      Continuar com o Google
+    </a>
+
+    <div class="divider"><span>ou entre com e-mail</span></div>
+
+    <form method="POST">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-      <div>
-        <label for="email" class="block text-sm font-medium text-gray-300 mb-1.5">E-mail</label>
-        <input
-          type="email" id="email" name="email" required autocomplete="email"
-          class="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2.5 text-sm text-white
-                 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent transition"
-          placeholder="seu@email.com">
+
+      <label for="email">E-mail</label>
+      <input type="email" id="email" name="email" required autocomplete="email" placeholder="seu@email.com">
+
+      <label for="senha">Senha</label>
+      <input type="password" id="senha" name="senha" required autocomplete="current-password" placeholder="••••••">
+
+      <div class="row-between">
+        <label class="remember" style="margin: 0;">
+          <input type="checkbox" name="lembrar">
+          Lembrar de mim
+        </label>
+        <a href="{{ url_for('auth.esqueci_senha') }}" class="link-muted">Esqueci minha senha</a>
       </div>
 
-      <div>
-        <label for="senha" class="block text-sm font-medium text-gray-300 mb-1.5">Senha</label>
-        <input
-          type="password" id="senha" name="senha" required autocomplete="current-password"
-          class="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2.5 text-sm text-white
-                 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent transition"
-          placeholder="••••••">
-      </div>
-
-      <div class="flex items-center justify-between">
-        <div class="flex items-center">
-          <input type="checkbox" id="lembrar" name="lembrar"
-                 class="w-4 h-4 rounded border-gray-600 bg-gray-900 text-brand focus:ring-brand">
-          <label for="lembrar" class="ml-2 text-sm text-gray-400">Lembrar de mim</label>
-        </div>
-        <a href="{{ url_for('auth.esqueci_senha') }}" class="text-sm text-gray-500 hover:text-brand transition-colors">
-          Esqueci minha senha
-        </a>
-      </div>
-
-      <button type="submit"
-              class="w-full bg-brand hover:bg-brand-dark text-white font-semibold rounded-lg py-2.5 text-sm
-                     transition-colors focus:outline-none focus:ring-2 focus:ring-brand focus:ring-offset-2 focus:ring-offset-gray-800 mt-2">
-        Entrar
-      </button>
+      <button type="submit" class="btn-primary">Entrar</button>
     </form>
 
-    <p class="text-center text-sm text-gray-500 mt-6">
+    <p class="footer-text">
       Não tem conta?
-      <a href="{{ url_for('auth.register') }}" class="text-brand hover:text-brand-light font-medium transition-colors">
-        Criar conta grátis
-      </a>
+      <a href="{{ url_for('auth.register') }}" class="link-accent">Criar conta grátis</a>
     </p>
   </div>
-
-  <p class="text-center text-xs text-gray-600 mt-6">
-    Flux Barber • Plano Grátis sempre disponível
-  </p>
 </div>
 
 </body>

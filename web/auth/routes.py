@@ -1,4 +1,4 @@
-"""Rotas de autenticação: login, register, logout, recuperação de senha."""
+"""Rotas de autenticação: login, register, logout, recuperação de senha, Google OAuth."""
 
 from __future__ import annotations
 
@@ -91,6 +91,74 @@ def register():
 def logout():
     logout_user()
     return redirect(url_for("auth.login"))
+
+
+# ──────────────────────────────── Google OAuth ────────────────────────────────
+
+
+@auth_bp.route("/google")
+def google_login():
+    if current_user.is_authenticated:
+        return redirect(url_for("dashboard.index"))
+    from web import oauth
+    redirect_uri = url_for("auth.google_callback", _external=True)
+    return oauth.google.authorize_redirect(redirect_uri)
+
+
+@auth_bp.route("/google/callback")
+def google_callback():
+    from web import oauth
+
+    try:
+        token = oauth.google.authorize_access_token()
+    except Exception:
+        flash("Autenticação com o Google cancelada ou falhou.", "error")
+        return redirect(url_for("auth.login"))
+
+    user_info = token.get("userinfo")
+    if not user_info:
+        flash("Não foi possível obter dados da conta Google.", "error")
+        return redirect(url_for("auth.login"))
+
+    google_id = user_info["sub"]
+    email = user_info["email"].lower().strip()
+    nome = user_info.get("name") or email.split("@")[0]
+
+    # Caso 1: usuário Google já cadastrado → login direto
+    user = User.get_by_google_id(google_id)
+
+    if not user:
+        existing = User.get_by_email(email)
+        if existing:
+            # Caso 2: e-mail já existe (conta email/senha) → vincula Google
+            conn = get_connection()
+            conn.execute(
+                "UPDATE usuario SET google_id = ? WHERE id = ?",
+                (google_id, existing.id),
+            )
+            conn.close()
+            user = User.get_by_id(existing.id)
+            flash("Conta Google vinculada com sucesso!", "success")
+        else:
+            # Caso 3: usuário novo → cria conta via Google
+            user = User.criar_via_google(nome, email, google_id)
+            try:
+                from app.repositories.user_db import get_user_connection
+                from app.repositories.sql.seed import apply_seed
+                conn_u = get_user_connection(user.device_id)
+                apply_seed(conn_u)
+                conn_u.close()
+            except Exception as exc:
+                flash(f"Aviso: catálogo inicial não pôde ser criado ({exc}).", "info")
+            flash(f"Bem-vindo, {user.nome}! Conta criada com sucesso.", "success")
+
+    if not user:
+        flash("Erro ao autenticar com o Google. Tente novamente.", "error")
+        return redirect(url_for("auth.login"))
+
+    login_user(user, remember=True)
+    user.registrar_acesso()
+    return redirect(url_for("dashboard.index"))
 
 
 # ──────────────────────────────── Esqueci minha senha ────────────────────────

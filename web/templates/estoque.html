@@ -1,99 +1,106 @@
 {% extends "base.html" %}
-{% block title %}Estoque — Flux Barber{% endblock %}
+{% block title %}Estoque — Flux{% endblock %}
 
 {% block content %}
-<div class="max-w-6xl mx-auto space-y-6">
+<div style="max-width: 1100px; margin: 0 auto;">
 
-  <div class="flex items-center justify-between flex-wrap gap-3">
+  <!-- Header -->
+  <div style="display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 32px;">
     <div>
-      <h1 class="text-xl font-bold text-white">Controle de Estoque</h1>
-      <p class="text-sm text-gray-400 mt-0.5">{{ produtos|length }} produto(s) cadastrado(s)</p>
+      <h1 style="font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 700; color: var(--text-pri); letter-spacing: -0.025em; line-height: 1.1; margin: 0;">
+        Estoque
+      </h1>
+      <p style="font-size: 12px; color: var(--text-muted); margin-top: 5px;">
+        {{ produtos|length }} produto(s) cadastrado(s)
+      </p>
     </div>
-    <button onclick="openModal('modal-compra')"
-            class="flex items-center gap-2 bg-brand hover:bg-emerald-600 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors">
-      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+    <button onclick="openModal('modal-compra')" class="btn-accent">
+      <svg style="width: 13px; height: 13px; flex-shrink: 0;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/>
+      </svg>
       Registrar compra
     </button>
   </div>
 
   <!-- KPIs do mês -->
-  <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-    <div class="bg-gray-800 border border-gray-700 rounded-xl p-4">
-      <p class="text-xs text-gray-400 mb-2">Receita vendas (mês)</p>
-      <p class="text-xl font-bold text-emerald-400">R$ {{ "%.2f"|format(resumo.vendas.total / 100) }}</p>
-      <p class="text-xs text-gray-500 mt-1">{{ resumo.vendas.qtd }} unid. vendidas</p>
+  <div class="grid grid-cols-2 lg:grid-cols-4 gap-3" style="margin-bottom: 20px;">
+    <div class="card" style="padding: 16px 18px; border-top: 2px solid var(--profit);">
+      <p style="font-size: 11px; color: var(--text-muted); margin-bottom: 8px; letter-spacing: 0.03em;">Receita vendas (mês)</p>
+      <p class="kpi-value" style="font-size: 17px; color: var(--profit);">R$&nbsp;{{ "%.2f"|format(resumo.vendas.total / 100) }}</p>
+      <p style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">{{ resumo.vendas.qtd }} unid. vendidas</p>
     </div>
-    <div class="bg-gray-800 border border-gray-700 rounded-xl p-4">
-      <p class="text-xs text-gray-400 mb-2">Custo compras (mês)</p>
-      <p class="text-xl font-bold text-red-400">R$ {{ "%.2f"|format(resumo.compras.total / 100) }}</p>
-      <p class="text-xs text-gray-500 mt-1">{{ resumo.compras.qtd }} unid. compradas</p>
+    <div class="card" style="padding: 16px 18px; border-top: 2px solid var(--loss);">
+      <p style="font-size: 11px; color: var(--text-muted); margin-bottom: 8px; letter-spacing: 0.03em;">Custo compras (mês)</p>
+      <p class="kpi-value" style="font-size: 17px; color: var(--loss);">R$&nbsp;{{ "%.2f"|format(resumo.compras.total / 100) }}</p>
+      <p style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">{{ resumo.compras.qtd }} unid. compradas</p>
     </div>
-    <div class="bg-gray-800 border border-gray-700 rounded-xl p-4">
-      <p class="text-xs text-gray-400 mb-2">Margem bruta (mês)</p>
-      {% set margem = resumo.margem_centavos %}
-      <p class="text-xl font-bold {{ 'text-emerald-400' if margem >= 0 else 'text-red-400' }}">
-        R$ {{ "%.2f"|format(margem / 100) }}
-      </p>
+    {% set margem = resumo.margem_centavos %}
+    <div class="card" style="padding: 16px 18px; border-top: 2px solid {{ 'var(--profit)' if margem >= 0 else 'var(--loss)' }};">
+      <p style="font-size: 11px; color: var(--text-muted); margin-bottom: 8px; letter-spacing: 0.03em;">Margem bruta (mês)</p>
+      <p class="kpi-value" style="font-size: 17px; color: {{ 'var(--profit)' if margem >= 0 else 'var(--loss)' }};">R$&nbsp;{{ "%.2f"|format(margem / 100) }}</p>
     </div>
-    <div class="bg-gray-800 border border-gray-700 rounded-xl p-4">
-      <p class="text-xs text-gray-400 mb-2">Produtos em estoque</p>
-      {% set total_itens = namespace(v=0) %}
-      {% for p in produtos %}{% if p['ativo'] %}{% set total_itens.v = total_itens.v + p['quantidade_estoque'] %}{% endif %}{% endfor %}
-      <p class="text-xl font-bold text-blue-400">{{ total_itens.v }}</p>
-      <p class="text-xs text-gray-500 mt-1">unidades totais</p>
+    {% set total_itens = namespace(v=0) %}
+    {% for p in produtos %}{% if p['ativo'] %}{% set total_itens.v = total_itens.v + p['quantidade_estoque'] %}{% endif %}{% endfor %}
+    <div class="card" style="padding: 16px 18px; border-top: 2px solid var(--accent);">
+      <p style="font-size: 11px; color: var(--text-muted); margin-bottom: 8px; letter-spacing: 0.03em;">Produtos em estoque</p>
+      <p class="kpi-value" style="font-size: 17px; color: var(--accent);">{{ total_itens.v }}</p>
+      <p style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">unidades totais</p>
     </div>
   </div>
 
   {% if resumo.vendas.total == 0 and resumo.compras.total == 0 and produtos %}
-  <div class="flex items-center gap-3 px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-xl text-sm text-gray-500">
-    <svg class="w-4 h-4 shrink-0 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-    <span>Nenhuma movimentação neste mês. Os valores acima serão preenchidos conforme você registrar compras e vendas.</span>
-    <a href="{{ url_for('lancamento.index') }}" class="text-brand hover:text-emerald-400 ml-auto shrink-0 whitespace-nowrap">Lançar →</a>
+  <div style="display: flex; align-items: center; gap: 10px; padding: 12px 16px; background: var(--bg-surface); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 20px;">
+    <svg style="width: 14px; height: 14px; flex-shrink: 0; color: var(--text-muted);" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+    <span style="font-size: 12px; color: var(--text-muted);">Nenhuma movimentação neste mês.</span>
+    <a href="{{ url_for('lancamento.index') }}" style="font-size: 12px; color: var(--accent); text-decoration: none; margin-left: auto; white-space: nowrap;">Lançar →</a>
   </div>
   {% endif %}
 
-  <div class="grid lg:grid-cols-3 gap-4">
+  <div class="grid lg:grid-cols-3 gap-4" style="margin-bottom: 24px;">
 
     <!-- Catálogo de produtos -->
-    <div class="lg:col-span-2 bg-gray-800 border border-gray-700 rounded-xl overflow-hidden">
-      <div class="flex items-center justify-between px-5 py-4 border-b border-gray-700">
-        <h3 class="text-sm font-semibold text-white">Produtos</h3>
+    <div class="lg:col-span-2 card" style="overflow: hidden;">
+      <div style="display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border-bottom: 1px solid var(--border);">
+        <p style="font-size: 13px; font-weight: 600; color: var(--text-pri);">Produtos</p>
       </div>
       {% if produtos %}
-      <table class="w-full text-sm">
+      <table class="data-table" style="width: 100%;">
         <thead>
-          <tr class="text-xs text-gray-500 uppercase tracking-wider border-b border-gray-700">
-            <th class="px-4 py-3 text-left">Produto</th>
-            <th class="px-4 py-3 text-right">Custo</th>
-            <th class="px-4 py-3 text-right">Venda</th>
-            <th class="px-4 py-3 text-right">Estoque</th>
-            <th class="px-4 py-3 text-center">Ações</th>
+          <tr>
+            <th style="text-align: left;">Produto</th>
+            <th style="text-align: right;">Custo</th>
+            <th style="text-align: right;">Venda</th>
+            <th style="text-align: right;">Estoque</th>
+            <th style="text-align: center;">Ações</th>
           </tr>
         </thead>
-        <tbody class="divide-y divide-gray-700/50">
+        <tbody>
           {% for p in produtos %}
-          <tr class="hover:bg-gray-700/30 transition-colors {% if not p['ativo'] %}opacity-50{% endif %}">
-            <td class="px-4 py-3">
-              <p class="text-white text-sm font-medium">{{ p['nome'] }}</p>
-              {% if p['descricao'] %}<p class="text-xs text-gray-500">{{ p['descricao'] }}</p>{% endif %}
+          <tr style="{{ 'opacity: 0.45;' if not p['ativo'] else '' }}">
+            <td>
+              <p style="font-size: 13px; font-weight: 500; color: var(--text-pri);">{{ p['nome'] }}</p>
+              {% if p['descricao'] %}<p style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">{{ p['descricao'] }}</p>{% endif %}
             </td>
-            <td class="px-4 py-3 text-right text-gray-400 text-xs">R$ {{ "%.2f"|format(p['preco_custo'] / 100) }}</td>
-            <td class="px-4 py-3 text-right text-emerald-400 text-sm font-medium">R$ {{ "%.2f"|format(p['preco_venda'] / 100) }}</td>
-            <td class="px-4 py-3 text-right">
-              <span class="text-sm font-bold {% if p['quantidade_estoque'] <= 2 %}text-red-400{% elif p['quantidade_estoque'] <= 5 %}text-yellow-400{% else %}text-white{% endif %}">
+            <td style="text-align: right; font-size: 12px; color: var(--text-muted); font-family: 'IBM Plex Mono', monospace;">R$&nbsp;{{ "%.2f"|format(p['preco_custo'] / 100) }}</td>
+            <td style="text-align: right;">
+              <span class="kpi-value" style="font-size: 13px; color: var(--profit);">R$&nbsp;{{ "%.2f"|format(p['preco_venda'] / 100) }}</span>
+            </td>
+            <td style="text-align: right;">
+              <span class="kpi-value" style="font-size: 14px; color: {{ 'var(--loss)' if p['quantidade_estoque'] <= 2 else ('var(--accent)' if p['quantidade_estoque'] <= 5 else 'var(--text-pri)') }};">
                 {{ p['quantidade_estoque'] }}
               </span>
             </td>
-            <td class="px-4 py-3 text-center">
-              <div class="flex items-center justify-center gap-1.5">
+            <td style="text-align: center;">
+              <div style="display: flex; align-items: center; justify-content: center; gap: 6px;">
                 <button onclick="abrirVenda({{ p['id'] }}, '{{ p['nome']|e }}', {{ p['preco_venda'] }}, {{ p['quantidade_estoque'] }})"
-                        class="text-xs px-2 py-1 rounded bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                        {% if p['quantidade_estoque'] == 0 or not p['ativo'] %}disabled{% endif %}>
+                        style="font-size: 11px; padding: 3px 10px; border-radius: 5px; border: none; cursor: pointer; background: rgba(34,211,160,0.12); color: var(--profit); transition: background 0.15s;"
+                        onmouseover="this.style.background='rgba(34,211,160,0.22)'" onmouseout="this.style.background='rgba(34,211,160,0.12)'"
+                        {% if p['quantidade_estoque'] == 0 or not p['ativo'] %}disabled style="opacity:0.4;cursor:not-allowed;"{% endif %}>
                   Vender
                 </button>
-
                 <button onclick="abrirAjuste({{ p['id'] }}, '{{ p['nome']|e }}', {{ p['quantidade_estoque'] }})"
-                        class="text-xs px-2 py-1 rounded bg-gray-600/50 text-gray-300 hover:bg-gray-600 transition-colors">
+                        style="font-size: 11px; padding: 3px 10px; border-radius: 5px; border: none; cursor: pointer; background: var(--bg-elevated); color: var(--text-sec); transition: background 0.15s;"
+                        onmouseover="this.style.background='rgba(255,255,255,0.07)'" onmouseout="this.style.background='var(--bg-elevated)'">
                   Qtd
                 </button>
               </div>
@@ -103,80 +110,84 @@
         </tbody>
       </table>
       {% else %}
-      <div class="py-16 text-center text-gray-500">
-        <svg class="w-12 h-12 mx-auto mb-3 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10"/></svg>
-        <p class="mb-3">Nenhum produto cadastrado.</p>
-        <button onclick="openModal('modal-compra')" class="text-brand hover:text-emerald-400 text-sm font-medium">Registrar primeira compra</button>
+      <div style="padding: 64px 0; text-align: center;">
+        <svg style="width: 40px; height: 40px; color: var(--text-muted); opacity: 0.3; margin: 0 auto 12px; display: block;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10"/>
+        </svg>
+        <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 12px;">Nenhum produto cadastrado.</p>
+        <button onclick="openModal('modal-compra')" style="font-size: 12px; color: var(--accent); background: none; border: none; cursor: pointer;">Registrar primeira compra</button>
       </div>
       {% endif %}
     </div>
 
     <!-- Top produtos do mês -->
-    <div class="bg-gray-800 border border-gray-700 rounded-xl p-5">
-      <h3 class="text-sm font-semibold text-white mb-4">Top vendas (mês)</h3>
+    <div class="card" style="padding: 18px 20px;">
+      <p style="font-size: 12px; font-weight: 500; color: var(--text-sec); margin-bottom: 16px; letter-spacing: 0.02em;">Top vendas (mês)</p>
       {% if resumo.ranking_produtos %}
-        <div class="space-y-3">
-          {% for r in resumo.ranking_produtos %}
-          <div class="flex items-center gap-2">
-            <span class="text-xs text-gray-500 w-4">{{ loop.index }}</span>
-            <div class="flex-1 min-w-0">
-              <p class="text-xs text-white truncate">{{ r['nome'] }}</p>
-              <p class="text-xs text-gray-500">{{ r['qtd_vendida'] }}× · R$ {{ "%.2f"|format(r['receita_venda'] / 100) }}</p>
-            </div>
+      <div style="display: flex; flex-direction: column; gap: 11px;">
+        {% for r in resumo.ranking_produtos %}
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span class="kpi-value" style="font-size: 11px; color: var(--accent); width: 14px; flex-shrink: 0; text-align: right;">{{ loop.index }}</span>
+          <div style="flex: 1; min-width: 0;">
+            <p style="font-size: 13px; color: var(--text-pri); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.3;">{{ r['nome'] }}</p>
+            <p style="font-size: 11px; color: var(--text-muted); margin-top: 1px; font-family: 'IBM Plex Mono', monospace; letter-spacing: 0.01em;">{{ r['qtd_vendida'] }}× &middot; R$&nbsp;{{ "%.2f"|format(r['receita_venda'] / 100) }}</p>
           </div>
-          {% endfor %}
         </div>
+        {% endfor %}
+      </div>
       {% else %}
-        <p class="text-xs text-gray-500">Nenhuma venda este mês.</p>
+      <p style="font-size: 12px; color: var(--text-muted);">Nenhuma venda este mês.</p>
       {% endif %}
     </div>
+
   </div>
 
   <!-- Movimentações recentes -->
   {% if movimentacoes %}
-  <div class="bg-gray-800 border border-gray-700 rounded-xl overflow-hidden">
-    <div class="px-5 py-4 border-b border-gray-700">
-      <h3 class="text-sm font-semibold text-white">Movimentações (últimos 60 dias)</h3>
+  <div class="card" style="overflow: hidden;">
+    <div style="padding: 14px 18px; border-bottom: 1px solid var(--border);">
+      <p style="font-size: 13px; font-weight: 600; color: var(--text-pri);">Movimentações (últimos 60 dias)</p>
     </div>
-    <table class="w-full text-sm">
+    <table class="data-table" style="width: 100%;">
       <thead>
-        <tr class="text-xs text-gray-500 uppercase tracking-wider border-b border-gray-700">
-          <th class="px-4 py-3 text-left">Data</th>
-          <th class="px-4 py-3 text-left">Produto</th>
-          <th class="px-4 py-3 text-center">Tipo</th>
-          <th class="px-4 py-3 text-right">Qtd</th>
-          <th class="px-4 py-3 text-right">Unit.</th>
-          <th class="px-4 py-3 text-right">Total</th>
-          <th class="px-4 py-3"></th>
+        <tr>
+          <th style="text-align: left;">Data</th>
+          <th style="text-align: left;">Produto</th>
+          <th style="text-align: center;">Tipo</th>
+          <th style="text-align: right;">Qtd</th>
+          <th style="text-align: right;">Unit.</th>
+          <th style="text-align: right;">Total</th>
+          <th style="width: 40px;"></th>
         </tr>
       </thead>
-      <tbody class="divide-y divide-gray-700/50">
+      <tbody>
         {% for m in movimentacoes %}
-        <tr class="hover:bg-gray-700/30 transition-colors">
-          <td class="px-4 py-3 text-gray-300 whitespace-nowrap">{{ m['data'][8:10] }}/{{ m['data'][5:7] }}</td>
-          <td class="px-4 py-3 text-white">{{ m['produto_nome'] }}</td>
-          <td class="px-4 py-3 text-center">
-            <span class="text-xs px-2 py-0.5 rounded-full
-              {% if m['tipo'] == 'VENDA' %}bg-emerald-500/15 text-emerald-400
-              {% elif m['tipo'] == 'COMPRA' %}bg-blue-500/15 text-blue-400
-              {% else %}bg-gray-500/15 text-gray-400{% endif %}">
-              {{ m['tipo'] }}
+        <tr>
+          <td style="white-space: nowrap; font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--text-sec);">{{ m['data'][8:10] }}/{{ m['data'][5:7] }}</td>
+          <td style="font-size: 13px; color: var(--text-pri);">{{ m['produto_nome'] }}</td>
+          <td style="text-align: center;">
+            {% if m['tipo'] == 'VENDA' %}
+            <span style="font-size: 11px; padding: 2px 8px; border-radius: 99px; background: rgba(34,211,160,0.12); color: var(--profit); font-family: 'IBM Plex Mono', monospace;">VENDA</span>
+            {% elif m['tipo'] == 'COMPRA' %}
+            <span style="font-size: 11px; padding: 2px 8px; border-radius: 99px; background: rgba(59,130,246,0.12); color: #60a5fa; font-family: 'IBM Plex Mono', monospace;">COMPRA</span>
+            {% else %}
+            <span style="font-size: 11px; padding: 2px 8px; border-radius: 99px; background: rgba(100,100,100,0.12); color: var(--text-muted); font-family: 'IBM Plex Mono', monospace;">{{ m['tipo'] }}</span>
+            {% endif %}
+          </td>
+          <td style="text-align: right; font-size: 13px; color: var(--text-pri); font-family: 'IBM Plex Mono', monospace;">{{ m['quantidade']|abs }}</td>
+          <td style="text-align: right; font-size: 12px; color: var(--text-muted); font-family: 'IBM Plex Mono', monospace;">R$&nbsp;{{ "%.2f"|format(m['preco_unitario'] / 100) }}</td>
+          <td style="text-align: right;">
+            <span class="kpi-value" style="font-size: 13px; color: {{ 'var(--profit)' if m['tipo'] == 'VENDA' else ('var(--loss)' if m['tipo'] == 'COMPRA' else 'var(--text-muted)') }};">
+              R$&nbsp;{{ "%.2f"|format(m['total_centavos'] / 100) }}
             </span>
           </td>
-          <td class="px-4 py-3 text-right text-white">{{ m['quantidade']|abs }}</td>
-          <td class="px-4 py-3 text-right text-gray-400 text-xs">R$ {{ "%.2f"|format(m['preco_unitario'] / 100) }}</td>
-          <td class="px-4 py-3 text-right font-medium
-            {% if m['tipo'] == 'VENDA' %}text-emerald-400{% elif m['tipo'] == 'COMPRA' %}text-red-400{% else %}text-gray-400{% endif %}">
-            R$ {{ "%.2f"|format(m['total_centavos'] / 100) }}
-          </td>
-          <td class="px-4 py-3 text-center">
+          <td style="text-align: right; padding-right: 12px;">
             <form method="POST" action="{{ url_for('estoque.excluir_movimentacao', mov_id=m['id']) }}"
                   onsubmit="return confirm('Excluir esta movimentação? O estoque será revertido.')">
               <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-              <button type="submit" class="text-gray-600 hover:text-red-400 transition-colors" title="Excluir">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+              <button type="submit" class="icon-btn-danger">
+                <svg style="width: 14px; height: 14px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
                 </svg>
               </button>
             </form>
@@ -190,17 +201,15 @@
 
 </div>
 
-
 <!-- Modal Registrar Compra -->
-<div id="modal-compra" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60">
-  <div class="bg-gray-800 border border-gray-700 rounded-2xl p-6 w-full max-w-md">
-    <h3 class="text-base font-semibold text-white mb-5">Registrar Compra</h3>
-    <form method="POST" action="{{ url_for('estoque.registrar_compra') }}" class="space-y-4">
+<div id="modal-compra" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4" style="background: rgba(0,0,0,0.7);">
+  <div class="card" style="padding: 24px; width: 100%; max-width: 440px;">
+    <h3 style="font-size: 15px; font-weight: 600; color: var(--text-pri); margin-bottom: 20px;">Registrar Compra</h3>
+    <form method="POST" action="{{ url_for('estoque.registrar_compra') }}" style="display: flex; flex-direction: column; gap: 14px;">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <div>
-        <label class="block text-xs font-medium text-gray-400 mb-1.5">Produto</label>
-        <select name="produto_id" id="compra-produto" required onchange="preencherCustoSugerido()"
-                class="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2.5 text-white text-sm focus:ring-2 focus:ring-brand focus:outline-none">
+        <label style="display: block; font-size: 11px; font-weight: 500; color: var(--text-muted); margin-bottom: 6px;">Produto</label>
+        <select name="produto_id" id="compra-produto" required onchange="preencherCustoSugerido()">
           <option value="">Selecione…</option>
           {% for p in produtos if p['ativo'] %}
           <option value="{{ p['id'] }}" data-custo="{{ p['preco_custo'] }}">{{ p['nome'] }}</option>
@@ -209,130 +218,100 @@
         </select>
       </div>
 
-      <!-- Campos para novo produto (oculto por padrão) -->
-      <div id="campos-novo-produto" class="hidden space-y-3 bg-gray-900/50 rounded-lg p-3 border border-gray-700">
-        <p class="text-xs font-semibold text-brand">Novo produto</p>
-        <input type="text" name="novo_nome" placeholder="Nome do produto"
-               class="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm focus:ring-2 focus:ring-brand focus:outline-none">
+      <!-- Campos para novo produto -->
+      <div id="campos-novo-produto" class="hidden" style="display: none; flex-direction: column; gap: 10px; background: var(--bg-base); border: 1px solid var(--border); border-radius: 8px; padding: 12px;">
+        <p style="font-size: 11px; font-weight: 600; color: var(--accent); margin: 0;">Novo produto</p>
+        <input type="text" name="novo_nome" placeholder="Nome do produto">
         <div class="grid grid-cols-2 gap-2">
           <div>
-            <label class="block text-xs text-gray-400 mb-1">Preço de custo (R$)</label>
-            <input type="number" name="novo_preco_custo" step="0.01" min="0"
-                   class="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm focus:ring-2 focus:ring-brand focus:outline-none">
+            <label style="display: block; font-size: 11px; color: var(--text-muted); margin-bottom: 4px;">Preço de custo (R$)</label>
+            <input type="number" name="novo_preco_custo" step="0.01" min="0">
           </div>
           <div>
-            <label class="block text-xs text-gray-400 mb-1">Preço de venda (R$)</label>
-            <input type="number" name="novo_preco_venda" step="0.01" min="0"
-                   class="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm focus:ring-2 focus:ring-brand focus:outline-none">
+            <label style="display: block; font-size: 11px; color: var(--text-muted); margin-bottom: 4px;">Preço de venda (R$)</label>
+            <input type="number" name="novo_preco_venda" step="0.01" min="0">
           </div>
         </div>
       </div>
 
       <div class="grid grid-cols-2 gap-3">
         <div>
-          <label class="block text-xs font-medium text-gray-400 mb-1.5">Quantidade</label>
-          <input type="number" name="quantidade" min="1" required value="1"
-                 class="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2.5 text-white text-sm focus:ring-2 focus:ring-brand focus:outline-none">
+          <label style="display: block; font-size: 11px; font-weight: 500; color: var(--text-muted); margin-bottom: 6px;">Quantidade</label>
+          <input type="number" name="quantidade" min="1" required value="1">
         </div>
         <div>
-          <label class="block text-xs font-medium text-gray-400 mb-1.5">Preço de custo unit. (R$)</label>
-          <input type="number" name="preco_custo" id="compra-preco" step="0.01" min="0" required
-                 class="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2.5 text-white text-sm focus:ring-2 focus:ring-brand focus:outline-none">
+          <label style="display: block; font-size: 11px; font-weight: 500; color: var(--text-muted); margin-bottom: 6px;">Custo unit. (R$)</label>
+          <input type="number" name="preco_custo" id="compra-preco" step="0.01" min="0" required>
         </div>
       </div>
       <div class="grid grid-cols-2 gap-3">
         <div>
-          <label class="block text-xs font-medium text-gray-400 mb-1.5">Data</label>
-          <input type="date" name="data" value="{{ hoje.isoformat() }}"
-                 class="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2.5 text-white text-sm focus:ring-2 focus:ring-brand focus:outline-none">
+          <label style="display: block; font-size: 11px; font-weight: 500; color: var(--text-muted); margin-bottom: 6px;">Data</label>
+          <input type="date" name="data" value="{{ hoje.isoformat() }}">
         </div>
         <div>
-          <label class="block text-xs font-medium text-gray-400 mb-1.5">Observação</label>
-          <input type="text" name="observacao" placeholder="opcional"
-                 class="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2.5 text-white text-sm focus:ring-2 focus:ring-brand focus:outline-none">
+          <label style="display: block; font-size: 11px; font-weight: 500; color: var(--text-muted); margin-bottom: 6px;">Observação</label>
+          <input type="text" name="observacao" placeholder="opcional">
         </div>
       </div>
-      <div class="flex gap-3 pt-2">
-        <button type="button" onclick="closeModal('modal-compra')"
-                class="flex-1 py-2.5 text-sm font-medium rounded-lg border border-gray-600 text-gray-400 hover:text-white transition-colors">
-          Cancelar
-        </button>
-        <button type="submit"
-                class="flex-1 py-2.5 text-sm font-semibold rounded-lg bg-brand hover:bg-emerald-600 text-white transition-colors">
-          Registrar compra
-        </button>
+      <div style="display: flex; gap: 10px; padding-top: 6px;">
+        <button type="button" onclick="closeModal('modal-compra')" class="btn-ghost" style="flex: 1;">Cancelar</button>
+        <button type="submit" class="btn-accent" style="flex: 1; justify-content: center;">Registrar compra</button>
       </div>
     </form>
   </div>
 </div>
 
 <!-- Modal Venda -->
-<div id="modal-venda" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60">
-  <div class="bg-gray-800 border border-gray-700 rounded-2xl p-6 w-full max-w-sm">
-    <h3 class="text-base font-semibold text-white mb-1">Registrar Venda</h3>
-    <p class="text-sm text-gray-400 mb-5" id="venda-nome"></p>
-    <form method="POST" action="{{ url_for('estoque.registrar_venda') }}" class="space-y-4">
+<div id="modal-venda" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4" style="background: rgba(0,0,0,0.7);">
+  <div class="card" style="padding: 24px; width: 100%; max-width: 360px;">
+    <h3 style="font-size: 15px; font-weight: 600; color: var(--text-pri); margin-bottom: 4px;">Registrar Venda</h3>
+    <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 20px;" id="venda-nome"></p>
+    <form method="POST" action="{{ url_for('estoque.registrar_venda') }}" style="display: flex; flex-direction: column; gap: 14px;">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <input type="hidden" name="produto_id" id="venda-produto-id">
       <div class="grid grid-cols-2 gap-3">
         <div>
-          <label class="block text-xs font-medium text-gray-400 mb-1.5">Quantidade</label>
-          <input type="number" name="quantidade" id="venda-qtd" min="1" value="1" required
-                 class="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2.5 text-white text-sm focus:ring-2 focus:ring-brand focus:outline-none">
-          <p class="text-xs text-gray-500 mt-1">Disponível: <span id="venda-estoque"></span></p>
+          <label style="display: block; font-size: 11px; font-weight: 500; color: var(--text-muted); margin-bottom: 6px;">Quantidade</label>
+          <input type="number" name="quantidade" id="venda-qtd" min="1" value="1" required>
+          <p style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">Disponível: <span id="venda-estoque" class="kpi-value" style="font-size: 11px; color: var(--accent);"></span></p>
         </div>
         <div>
-          <label class="block text-xs font-medium text-gray-400 mb-1.5">Preço de venda (R$)</label>
-          <input type="number" name="preco_venda" id="venda-preco" step="0.01" min="0.01" required
-                 class="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2.5 text-white text-sm focus:ring-2 focus:ring-brand focus:outline-none">
+          <label style="display: block; font-size: 11px; font-weight: 500; color: var(--text-muted); margin-bottom: 6px;">Preço de venda (R$)</label>
+          <input type="number" name="preco_venda" id="venda-preco" step="0.01" min="0.01" required>
         </div>
       </div>
       <div>
-        <label class="block text-xs font-medium text-gray-400 mb-1.5">Data</label>
-        <input type="date" name="data" value="{{ hoje.isoformat() }}"
-               class="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2.5 text-white text-sm focus:ring-2 focus:ring-brand focus:outline-none">
+        <label style="display: block; font-size: 11px; font-weight: 500; color: var(--text-muted); margin-bottom: 6px;">Data</label>
+        <input type="date" name="data" value="{{ hoje.isoformat() }}">
       </div>
-      <div class="flex gap-3 pt-2">
-        <button type="button" onclick="closeModal('modal-venda')"
-                class="flex-1 py-2.5 text-sm font-medium rounded-lg border border-gray-600 text-gray-400 hover:text-white transition-colors">
-          Cancelar
-        </button>
-        <button type="submit"
-                class="flex-1 py-2.5 text-sm font-semibold rounded-lg bg-brand hover:bg-emerald-600 text-white transition-colors">
-          Confirmar venda
-        </button>
+      <div style="display: flex; gap: 10px; padding-top: 6px;">
+        <button type="button" onclick="closeModal('modal-venda')" class="btn-ghost" style="flex: 1;">Cancelar</button>
+        <button type="submit" class="btn-accent" style="flex: 1; justify-content: center;">Confirmar venda</button>
       </div>
     </form>
   </div>
 </div>
 
 <!-- Modal Ajuste -->
-<div id="modal-ajuste" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60">
-  <div class="bg-gray-800 border border-gray-700 rounded-2xl p-6 w-full max-w-sm">
-    <h3 class="text-base font-semibold text-white mb-1">Ajustar Estoque</h3>
-    <p class="text-sm text-gray-400 mb-5" id="ajuste-nome"></p>
-    <form method="POST" action="{{ url_for('estoque.ajustar') }}" class="space-y-4">
+<div id="modal-ajuste" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4" style="background: rgba(0,0,0,0.7);">
+  <div class="card" style="padding: 24px; width: 100%; max-width: 360px;">
+    <h3 style="font-size: 15px; font-weight: 600; color: var(--text-pri); margin-bottom: 4px;">Ajustar Estoque</h3>
+    <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 20px;" id="ajuste-nome"></p>
+    <form method="POST" action="{{ url_for('estoque.ajustar') }}" style="display: flex; flex-direction: column; gap: 14px;">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <input type="hidden" name="produto_id" id="ajuste-produto-id">
       <div>
-        <label class="block text-xs font-medium text-gray-400 mb-1.5">Nova quantidade em estoque</label>
-        <input type="number" name="nova_quantidade" id="ajuste-qtd" min="0" required
-               class="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2.5 text-white text-sm focus:ring-2 focus:ring-brand focus:outline-none">
+        <label style="display: block; font-size: 11px; font-weight: 500; color: var(--text-muted); margin-bottom: 6px;">Nova quantidade em estoque</label>
+        <input type="number" name="nova_quantidade" id="ajuste-qtd" min="0" required>
       </div>
       <div>
-        <label class="block text-xs font-medium text-gray-400 mb-1.5">Motivo (opcional)</label>
-        <input type="text" name="observacao" placeholder="ex: contagem física corrigida"
-               class="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2.5 text-white text-sm focus:ring-2 focus:ring-brand focus:outline-none">
+        <label style="display: block; font-size: 11px; font-weight: 500; color: var(--text-muted); margin-bottom: 6px;">Motivo (opcional)</label>
+        <input type="text" name="observacao" placeholder="ex: contagem física corrigida">
       </div>
-      <div class="flex gap-3 pt-2">
-        <button type="button" onclick="closeModal('modal-ajuste')"
-                class="flex-1 py-2.5 text-sm font-medium rounded-lg border border-gray-600 text-gray-400 hover:text-white transition-colors">
-          Cancelar
-        </button>
-        <button type="submit"
-                class="flex-1 py-2.5 text-sm font-semibold rounded-lg bg-gray-600 hover:bg-gray-500 text-white transition-colors">
-          Salvar ajuste
-        </button>
+      <div style="display: flex; gap: 10px; padding-top: 6px;">
+        <button type="button" onclick="closeModal('modal-ajuste')" class="btn-ghost" style="flex: 1;">Cancelar</button>
+        <button type="submit" class="btn-ghost" style="flex: 1; justify-content: center; color: var(--text-pri);">Salvar ajuste</button>
       </div>
     </form>
   </div>
@@ -344,7 +323,6 @@
 function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
 function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
 
-// Fecha modal ao clicar fora
 document.querySelectorAll('[id^="modal-"]').forEach(m => {
   m.addEventListener('click', e => { if (e.target === m) closeModal(m.id); });
 });
@@ -353,7 +331,9 @@ function preencherCustoSugerido() {
   const sel = document.getElementById('compra-produto');
   const opt = sel.options[sel.selectedIndex];
   const isNovo = sel.value === '__novo__';
-  document.getElementById('campos-novo-produto').classList.toggle('hidden', !isNovo);
+  const campos = document.getElementById('campos-novo-produto');
+  campos.classList.toggle('hidden', !isNovo);
+  campos.style.display = isNovo ? 'flex' : 'none';
   if (!isNovo && opt.dataset.custo) {
     document.getElementById('compra-preco').value = (parseInt(opt.dataset.custo) / 100).toFixed(2);
   }
@@ -374,6 +354,5 @@ function abrirAjuste(id, nome, qtdAtual) {
   document.getElementById('ajuste-qtd').value = qtdAtual;
   openModal('modal-ajuste');
 }
-
 </script>
 {% endblock %}

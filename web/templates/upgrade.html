@@ -1,95 +1,121 @@
 {% extends "base.html" %}
-{% block title %}Plano Pro — Flux Barber{% endblock %}
+{% block title %}Plano Pro — Flux{% endblock %}
+
+{% block head %}
+<style>
+  .feature-check {
+    width: 15px; height: 15px; flex-shrink: 0; margin-top: 1px;
+    color: var(--accent);
+  }
+  .free-dot {
+    width: 5px; height: 5px; border-radius: 50%;
+    background: var(--border); flex-shrink: 0; margin-top: 6px;
+  }
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="max-w-lg mx-auto py-12">
+<div style="max-width: 480px; margin: 0 auto; padding: 24px 0 48px;">
 
   <!-- Header -->
-  <div class="text-center mb-10">
-    <p class="text-brand text-sm font-semibold tracking-widest uppercase mb-2">Plano Pro</p>
-    <h1 class="text-3xl font-bold text-white mb-3">Registre com a velocidade de uma conversa</h1>
-    <p class="text-gray-400 text-sm leading-relaxed">
-      Fale com o assistente IA para lançar atendimentos, despesas e vendas em segundos —
-      sem formulários, sem cliques.
+  <div style="text-align: center; margin-bottom: 40px;">
+    <span style="display: inline-block; font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); margin-bottom: 12px;">Plano Pro</span>
+    <h1 style="font-family: 'Syne', sans-serif; font-size: 28px; font-weight: 700; color: var(--text-pri); letter-spacing: -0.03em; line-height: 1.15; margin: 0 0 12px;">
+      Registre com a velocidade<br>de uma conversa
+    </h1>
+    <p style="font-size: 13px; color: var(--text-muted); line-height: 1.6; max-width: 340px; margin: 0 auto;">
+      Fale com o assistente IA para lançar atendimentos, despesas e vendas em segundos — sem formulários, sem cliques.
     </p>
   </div>
 
   <!-- Preview do Chat IA -->
-  <div class="mb-8 rounded-2xl border border-gray-700 bg-gray-800/60 aspect-video flex flex-col items-center justify-center gap-4 px-6 text-center">
-    <div class="w-14 h-14 rounded-2xl bg-brand/15 border border-brand/30 flex items-center justify-center">
-      <svg class="w-7 h-7 text-brand" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
+  <div class="card" style="margin-bottom: 24px; padding: 32px 24px; display: flex; flex-direction: column; align-items: center; gap: 16px; text-align: center; border-color: rgba(240,146,42,0.2);">
+    <div style="width: 52px; height: 52px; border-radius: 14px; background: rgba(240,146,42,0.1); border: 1px solid rgba(240,146,42,0.25); display: flex; align-items: center; justify-content: center;">
+      <svg style="width: 26px; height: 26px; color: var(--accent);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75"
+          d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
+      </svg>
     </div>
     <div>
-      <p class="text-white font-semibold mb-1">Fale, o Flux registra.</p>
-      <p class="text-gray-400 text-sm max-w-xs">"Fiz 3 cortes de R$ 45 no PIX e gastei R$ 12 em lâminas."<br>— pronto, tudo lançado.</p>
+      <p style="font-size: 15px; font-weight: 600; color: var(--text-pri); margin-bottom: 6px;">Fale, o Flux registra.</p>
+      <p style="font-size: 12px; color: var(--text-muted); line-height: 1.6;">
+        <em>"Fiz 3 cortes de R$ 45 no PIX e gastei R$ 12 em lâminas."</em><br>
+        — pronto, tudo lançado.
+      </p>
     </div>
-    <div class="flex gap-2 flex-wrap justify-center">
+    <div style="display: flex; gap: 6px; flex-wrap: wrap; justify-content: center;">
       {% for exemplo in ["Lançar atendimento", "Registrar despesa", "Ver faturamento do dia", "Consultar estoque"] %}
-      <span class="text-xs px-3 py-1.5 rounded-full bg-gray-700 text-gray-300 border border-gray-600">{{ exemplo }}</span>
+      <span style="font-size: 11px; padding: 4px 10px; border-radius: 99px; background: var(--bg-elevated); color: var(--text-muted); border: 1px solid var(--border);">{{ exemplo }}</span>
       {% endfor %}
     </div>
   </div>
 
   <!-- Pricing card -->
-  <div class="bg-gray-800 border border-brand/40 rounded-2xl p-8 mb-6 relative overflow-hidden">
-    <div class="absolute top-0 right-0 w-40 h-40 bg-brand/5 rounded-full -translate-y-10 translate-x-10"></div>
+  <div class="card" style="padding: 28px; margin-bottom: 16px; border-color: rgba(240,146,42,0.35); position: relative; overflow: hidden;">
+    <!-- Decorative glow -->
+    <div style="position: absolute; top: -40px; right: -40px; width: 120px; height: 120px; background: radial-gradient(circle, rgba(240,146,42,0.12) 0%, transparent 70%); pointer-events: none;"></div>
 
-    <div class="flex items-end gap-1 mb-6">
-      <span class="text-5xl font-bold text-white">R$&nbsp;29</span>
-      <span class="text-3xl font-bold text-white">,90</span>
-      <span class="text-gray-400 text-sm mb-1">/mês</span>
+    <!-- Price -->
+    <div style="display: flex; align-items: flex-end; gap: 2px; margin-bottom: 22px;">
+      <span style="font-family: 'Syne', sans-serif; font-size: 44px; font-weight: 700; color: var(--text-pri); line-height: 1;">R$&nbsp;29</span>
+      <span style="font-family: 'Syne', sans-serif; font-size: 28px; font-weight: 700; color: var(--text-pri); line-height: 1.2;">,90</span>
+      <span style="font-size: 13px; color: var(--text-muted); margin-bottom: 4px; margin-left: 4px;">/mês</span>
     </div>
 
-    <ul class="space-y-3 mb-8">
+    <!-- Features -->
+    <ul style="list-style: none; margin: 0 0 24px; padding: 0; display: flex; flex-direction: column; gap: 10px;">
       {% for feature in [
-        ("Assistente IA de lançamento conversacional", true),
-        ("Registra atendimentos, despesas e vendas por texto", true),
-        ("Consulta de faturamento por voz (\"quanto fiz hoje?\")", true),
-        ("Toda a plataforma de registro gratuita inclusa", true),
-        ("Cancele quando quiser, sem fidelidade", true),
+        "Assistente IA de lançamento conversacional",
+        "Registra atendimentos, despesas e vendas por texto",
+        "Consulta de faturamento por voz (\"quanto fiz hoje?\")",
+        "Toda a plataforma de registro gratuita inclusa",
+        "Cancele quando quiser, sem fidelidade",
       ] %}
-      <li class="flex items-start gap-3 text-sm">
-        <svg class="w-4 h-4 text-brand mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <li style="display: flex; align-items: flex-start; gap: 10px; font-size: 13px; color: var(--text-sec);">
+        <svg class="feature-check" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
         </svg>
-        <span class="text-gray-300">{{ feature[0] }}</span>
+        {{ feature }}
       </li>
       {% endfor %}
     </ul>
 
+    <!-- CTA -->
     <form action="{{ url_for('billing.checkout') }}" method="POST">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-      <button type="submit"
-              class="w-full bg-brand hover:bg-brand-dark text-white font-semibold py-3 rounded-xl transition-colors text-sm">
-        Assinar agora &mdash; R$&nbsp;29,90/mês
+      <button type="submit" class="btn-accent" style="width: 100%; justify-content: center; padding: 12px 20px; font-size: 14px; font-weight: 600; border-radius: 10px;">
+        Assinar agora — R$&nbsp;29,90/mês
       </button>
     </form>
 
-    <p class="text-center text-xs text-gray-500 mt-4">
-      Pagamento seguro via Stripe. Cartão de crédito.
+    <p style="text-align: center; font-size: 11px; color: var(--text-muted); margin-top: 12px;">
+      Pagamento seguro via Stripe &middot; Cartão de crédito
     </p>
   </div>
 
   <!-- Free plan reminder -->
-  <div class="bg-gray-800/50 border border-gray-700 rounded-xl p-5">
-    <p class="text-xs text-gray-400 font-medium mb-3 uppercase tracking-wide">Plano Gratuito — incluso para sempre</p>
-    <ul class="space-y-2">
+  <div class="card" style="padding: 20px 22px;">
+    <p style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 12px;">
+      Plano Gratuito — incluso para sempre
+    </p>
+    <ul style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px;">
       {% for item in [
         "Lançamento manual de atendimentos e despesas",
         "Controle de estoque completo",
         "Dashboard com receitas, despesas e saldo",
         "Configuração de serviços, categorias e produtos",
       ] %}
-      <li class="flex items-center gap-2 text-sm text-gray-400">
-        <span class="w-1 h-1 rounded-full bg-gray-600"></span>
+      <li style="display: flex; align-items: flex-start; gap: 10px; font-size: 13px; color: var(--text-muted);">
+        <span class="free-dot"></span>
         {{ item }}
       </li>
       {% endfor %}
     </ul>
   </div>
 
-  <p class="text-center mt-6">
-    <a href="{{ url_for('dashboard.index') }}" class="text-xs text-gray-500 hover:text-gray-400 transition-colors">
+  <p style="text-align: center; margin-top: 24px;">
+    <a href="{{ url_for('dashboard.index') }}" style="font-size: 12px; color: var(--text-muted); text-decoration: none; transition: color 0.15s;"
+       onmouseover="this.style.color='var(--text-sec)'" onmouseout="this.style.color='var(--text-muted)'">
       Voltar ao dashboard
     </a>
   </p>

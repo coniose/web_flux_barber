@@ -5,36 +5,370 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block title %}Flux Barber{% endblock %}</title>
   <meta name="csrf-token" content="{{ csrf_token() }}">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/htmx.org@1.9.12"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
   <script>
     tailwind.config = {
       theme: {
         extend: {
           colors: {
-            brand: { DEFAULT: '#10b981', dark: '#059669', light: '#34d399' }
+            base:    '#08080f',
+            surface: '#0e0e1c',
+            elevated:'#141428',
+            line:    '#1c1c30',
+            accent:  '#f0922a',
+            profit:  '#22d3a0',
+            loss:    '#f05252',
+          },
+          fontFamily: {
+            display: ['Syne', 'sans-serif'],
+            body:    ['IBM Plex Sans', 'sans-serif'],
+            mono:    ['IBM Plex Mono', 'monospace'],
           }
         }
       }
     }
   </script>
+
   <style>
+    :root {
+      --bg-base:      #08080f;
+      --bg-surface:   #0e0e1c;
+      --bg-elevated:  #141428;
+      --border:       #1c1c30;
+      --accent:       #f0922a;
+      --accent-dim:   rgba(240,146,42,0.10);
+      --text-pri:     #f0eff8;
+      --text-sec:     #8b8aab;
+      --text-muted:   #4a4966;
+      --profit:       #22d3a0;
+      --loss:         #f05252;
+      --info:         #6a9af4;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+
+    html, body { height: 100%; margin: 0; }
+
+    body {
+      background: var(--bg-base);
+      color: var(--text-pri);
+      font-family: 'IBM Plex Sans', sans-serif;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    /* ── Nav items ── */
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 7px 10px 7px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 400;
+      color: var(--text-sec);
+      transition: color 0.12s, background 0.12s, border-color 0.12s;
+      border-left: 2px solid transparent;
+      text-decoration: none;
+      letter-spacing: 0.01em;
+    }
+    .nav-item:hover {
+      color: var(--text-pri);
+      background: rgba(255,255,255,0.025);
+    }
+    .nav-item.active {
+      color: var(--accent);
+      border-left-color: var(--accent);
+      background: var(--accent-dim);
+      font-weight: 500;
+    }
+
+    /* ── Buttons ── */
+    .btn-accent {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 14px;
+      background: var(--accent);
+      color: #0a0508;
+      font-family: 'IBM Plex Sans', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: opacity 0.15s;
+      letter-spacing: 0.01em;
+    }
+    .btn-accent:hover { opacity: 0.85; }
+
+    .btn-ghost {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      background: transparent;
+      color: var(--text-sec);
+      font-family: 'IBM Plex Sans', sans-serif;
+      font-size: 13px;
+      font-weight: 400;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: color 0.12s, border-color 0.12s;
+    }
+    .btn-ghost:hover { color: var(--text-pri); border-color: #2e2e50; }
+
+    /* ── Cards ── */
+    .card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+    }
+
+    /* ── Mono values ── */
+    .kpi-value {
+      font-family: 'IBM Plex Mono', monospace;
+      font-weight: 500;
+      letter-spacing: -0.02em;
+    }
+
+    /* ── Pro badge ── */
+    .pro-badge {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 9px;
+      font-weight: 600;
+      padding: 2px 5px;
+      border-radius: 3px;
+      background: rgba(240,146,42,0.15);
+      color: var(--accent);
+      letter-spacing: 0.06em;
+    }
+
+    /* ── Upgrade CTA ── */
+    .upgrade-cta {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      background: linear-gradient(135deg, rgba(240,146,42,0.07), rgba(240,146,42,0.03));
+      border: 1px solid rgba(240,146,42,0.18);
+      border-radius: 8px;
+      text-decoration: none;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .upgrade-cta:hover {
+      background: linear-gradient(135deg, rgba(240,146,42,0.13), rgba(240,146,42,0.06));
+      border-color: rgba(240,146,42,0.32);
+    }
+
+    /* ── Flash messages ── */
+    .flash {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 11px 15px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 400;
+    }
+    .flash-error   { background: rgba(240,82,82,0.10);  border: 1px solid rgba(240,82,82,0.28);  color: #f9a8a8; }
+    .flash-success { background: rgba(34,211,160,0.10); border: 1px solid rgba(34,211,160,0.28); color: #86efcf; }
+    .flash-info    { background: rgba(106,154,244,0.10);border: 1px solid rgba(106,154,244,0.28);color: #bfcffd; }
+
+    /* ── Inputs ── */
+    input[type="date"],
+    input[type="text"],
+    input[type="email"],
+    input[type="password"],
+    input[type="number"],
+    select,
+    textarea {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 7px 12px;
+      font-size: 13px;
+      color: var(--text-pri);
+      font-family: 'IBM Plex Sans', sans-serif;
+      outline: none;
+      transition: border-color 0.12s, box-shadow 0.12s;
+    }
+    input[type="date"]:focus,
+    input[type="text"]:focus,
+    input[type="email"]:focus,
+    input[type="password"]:focus,
+    input[type="number"]:focus,
+    select:focus,
+    textarea:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(240,146,42,0.12);
+    }
+
+    /* ── Period pills ── */
+    .period-pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 11px;
+      font-size: 12px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      color: var(--text-sec);
+      text-decoration: none;
+      transition: color 0.12s, border-color 0.12s;
+      font-family: 'IBM Plex Sans', sans-serif;
+    }
+    .period-pill:hover { color: var(--accent); border-color: rgba(240,146,42,0.4); }
+
+    /* ── Section label ── */
+    .section-label {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    /* ── Sidebar ── */
+    .flux-sidebar {
+      width: 240px;
+      background: var(--bg-surface);
+      border-right: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    /* ── Mobile drawer ── */
+    #mobile-drawer {
+      width: 240px;
+      background: var(--bg-surface);
+      border-right: 1px solid var(--border);
+      transform: translateX(-100%);
+      transition: transform 0.25s cubic-bezier(0.4,0,0.2,1);
+    }
+
+    /* ── Scrollbar ── */
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    /* ── Tab system (reutilizado em várias telas) ── */
+    .tab-btn {
+      padding: 6px 14px;
+      font-size: 13px;
+      font-weight: 400;
+      color: var(--text-muted);
+      background: transparent;
+      border: none;
+      border-bottom: 2px solid transparent;
+      cursor: pointer;
+      font-family: 'IBM Plex Sans', sans-serif;
+      transition: color 0.12s, border-color 0.12s;
+    }
+    .tab-btn.active {
+      color: var(--text-pri);
+      border-bottom-color: var(--accent);
+    }
+    .tab-btn:hover:not(.active) { color: var(--text-sec); }
+
+    /* ── Service/product cards ── */
+    .service-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 14px;
+      cursor: pointer;
+      transition: border-color 0.12s, background 0.12s;
+    }
+    .service-card:hover { border-color: #2e2e50; }
+    .service-card.selected {
+      border-color: var(--accent);
+      background: var(--accent-dim);
+    }
+
+    /* ── Payment method buttons ── */
+    .pay-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      padding: 10px 8px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      cursor: pointer;
+      transition: border-color 0.12s, background 0.12s;
+      font-family: 'IBM Plex Sans', sans-serif;
+      color: var(--text-sec);
+      font-size: 12px;
+    }
+    .pay-btn:hover { border-color: #2e2e50; }
+    .pay-btn.selected {
+      border-color: var(--accent);
+      background: var(--accent-dim);
+      color: var(--accent);
+    }
+
+    /* ── Confirm panel ── */
+    .confirm-panel {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+    }
+
+    /* ── Data table ── */
+    .data-table { border-collapse: collapse; }
+    .data-table th {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .data-table td { padding: 11px 16px; border-bottom: 1px solid var(--border); }
+    .data-table tbody tr:last-child td { border-bottom: none; }
+    .data-table tbody tr { transition: background 0.12s; }
+    .data-table tbody tr:hover { background: rgba(255,255,255,0.02); }
+
+    /* ── Icon danger button ── */
+    .icon-btn-danger {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--text-muted);
+      padding: 4px;
+      border-radius: 4px;
+      transition: color 0.12s;
+      display: inline-flex;
+      align-items: center;
+    }
+    .icon-btn-danger:hover { color: var(--loss); }
+
     [x-cloak] { display: none !important; }
-    .sidebar-item { @apply flex items-center gap-3 px-4 py-2.5 rounded-lg text-gray-400 hover:text-white hover:bg-gray-700 transition-colors text-sm font-medium; }
-    .sidebar-item.active { @apply text-white bg-gray-700; }
   </style>
+
+  {% block head %}{% endblock %}
 </head>
-<body class="h-full bg-gray-900 text-gray-100" data-default-forma="{{ config_forma_padrao or 'PIX' }}">
+<body data-default-forma="{{ config_forma_padrao or 'PIX' }}">
 
 {% with messages = get_flashed_messages(with_categories=true) %}
   {% if messages %}
-    <div id="flash-messages" class="fixed top-4 right-4 z-50 flex flex-col gap-2">
+    <div id="flash-messages" class="fixed top-4 right-4 z-50 flex flex-col gap-2" style="max-width: 340px;">
       {% for category, message in messages %}
-        <div class="flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg text-sm font-medium
-          {% if category == 'error' %}bg-red-500/20 border border-red-500/40 text-red-300
-          {% elif category == 'success' %}bg-emerald-500/20 border border-emerald-500/40 text-emerald-300
-          {% else %}bg-blue-500/20 border border-blue-500/40 text-blue-300{% endif %}">
+        <div class="flash flash-{{ 'error' if category == 'error' else 'success' if category == 'success' else 'info' }}">
           {% if category == 'error' %}
             <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
           {% else %}
@@ -44,227 +378,244 @@
         </div>
       {% endfor %}
     </div>
-    <script>setTimeout(() => { const el = document.getElementById('flash-messages'); if(el) el.style.opacity = '0'; el.style.transition = 'opacity 0.5s'; setTimeout(() => el.remove(), 500); }, 3500);</script>
+    <script>
+      setTimeout(() => {
+        const el = document.getElementById('flash-messages');
+        if (el) { el.style.transition = 'opacity 0.5s'; el.style.opacity = '0'; setTimeout(() => el.remove(), 500); }
+      }, 3500);
+    </script>
   {% endif %}
 {% endwith %}
 
 {% block body %}
-<!-- Layout com sidebar -->
 <div class="flex h-full">
 
-  <!-- Sidebar -->
-  <aside class="hidden lg:flex lg:flex-col w-60 bg-gray-800 border-r border-gray-700 shrink-0">
+  <!-- ── Sidebar desktop ── -->
+  <aside class="flux-sidebar hidden lg:flex lg:flex-col" style="height: 100vh; position: sticky; top: 0;">
+
     <!-- Logo -->
-    <div class="flex items-center gap-3 px-6 py-5 border-b border-gray-700">
-      <div class="w-8 h-8 rounded-lg bg-brand flex items-center justify-center text-white font-bold text-sm">F</div>
-      <div class="min-w-0">
-        <p class="text-white font-semibold text-sm leading-none">Flux</p>
-        <p class="text-gray-500 text-xs mt-0.5 truncate">{{ nome_negocio }}</p>
+    <div style="padding: 18px 16px 16px; border-bottom: 1px solid var(--border);">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <div style="width: 32px; height: 32px; background: var(--accent); border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <path d="M2 7h10M7 2v10" stroke="#09060a" stroke-width="2.5" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div style="min-width: 0;">
+          <p style="font-family: 'Syne', sans-serif; font-weight: 700; font-size: 15px; color: var(--text-pri); letter-spacing: -0.02em; line-height: 1;">flux</p>
+          <p style="font-size: 11px; color: var(--text-muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ nome_negocio }}</p>
+        </div>
       </div>
     </div>
 
     <!-- Nav -->
-    <nav class="flex-1 px-3 py-4 space-y-1">
+    <nav style="flex: 1; padding: 10px 8px; display: flex; flex-direction: column; gap: 1px; overflow-y: auto;">
       <a href="{{ url_for('dashboard.index') }}"
-         class="sidebar-item {% if request.endpoint == 'dashboard.index' %}active{% endif %}">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h4a1 1 0 011 1v5a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h4a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM14 5a1 1 0 011-1h4a1 1 0 011 1v3a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM14 12a1 1 0 011-1h4a1 1 0 011 1v6a1 1 0 01-1 1h-4a1 1 0 01-1-1v-6z"/></svg>
+         class="nav-item {% if request.endpoint == 'dashboard.index' %}active{% endif %}">
+        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M4 5a1 1 0 011-1h4a1 1 0 011 1v5a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h4a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM14 5a1 1 0 011-1h4a1 1 0 011 1v3a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM14 12a1 1 0 011-1h4a1 1 0 011 1v6a1 1 0 01-1 1h-4a1 1 0 01-1-1v-6z"/></svg>
         Dashboard
       </a>
+      <a href="{{ url_for('lancamento.index') }}"
+         class="nav-item {% if request.endpoint and 'lancamento' in request.endpoint %}active{% endif %}">
+        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M12 4v16m8-8H4"/></svg>
+        Lançar
+      </a>
+      <a href="{{ url_for('receitas.index') }}"
+         class="nav-item {% if request.endpoint and 'receitas' in request.endpoint %}active{% endif %}">
+        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        Receitas
+      </a>
+      <a href="{{ url_for('despesas.index') }}"
+         class="nav-item {% if request.endpoint and 'despesas' in request.endpoint %}active{% endif %}">
+        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+        Despesas
+      </a>
+      <a href="{{ url_for('estoque.index') }}"
+         class="nav-item {% if request.endpoint and 'estoque' in request.endpoint %}active{% endif %}">
+        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+        Estoque
+      </a>
+      <a href="{{ url_for('config.index') }}"
+         class="nav-item {% if request.endpoint and 'config' in request.endpoint %}active{% endif %}">
+        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+        Configurações
+      </a>
+
+      <div style="height: 1px; background: var(--border); margin: 6px 2px;"></div>
+
       {% if current_user.is_authenticated and current_user.is_pro %}
       <a href="{{ url_for('chat.index') }}"
-         class="sidebar-item {% if request.endpoint and 'chat' in request.endpoint %}active{% endif %}">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
+         class="nav-item {% if request.endpoint and 'chat' in request.endpoint %}active{% endif %}">
+        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
         Chat IA
       </a>
       {% else %}
       <a href="{{ url_for('billing.upgrade') }}"
-         class="sidebar-item {% if request.endpoint and 'billing' in request.endpoint %}active{% endif %}">
-        <svg class="w-5 h-5 text-brand/70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/></svg>
-        <span class="text-gray-300">Chat IA</span>
-        <span class="ml-auto text-[10px] bg-brand/20 text-brand px-1.5 py-0.5 rounded font-semibold">Pro</span>
+         class="nav-item {% if request.endpoint and 'billing' in request.endpoint %}active{% endif %}">
+        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="color: var(--accent); opacity: 0.7;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/></svg>
+        <span style="color: var(--text-sec);">Chat IA</span>
+        <span class="pro-badge" style="margin-left: auto;">PRO</span>
       </a>
       {% endif %}
-      <a href="{{ url_for('lancamento.index') }}"
-         class="sidebar-item {% if request.endpoint and 'lancamento' in request.endpoint %}active{% endif %}">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-        Lançar
-      </a>
-      <a href="{{ url_for('receitas.index') }}"
-         class="sidebar-item {% if request.endpoint and 'receitas' in request.endpoint %}active{% endif %}">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-        Receitas
-      </a>
-      <a href="{{ url_for('despesas.index') }}"
-         class="sidebar-item {% if request.endpoint and 'despesas' in request.endpoint %}active{% endif %}">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
-        Despesas
-      </a>
-      <a href="{{ url_for('estoque.index') }}"
-         class="sidebar-item {% if request.endpoint and 'estoque' in request.endpoint %}active{% endif %}">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
-        Estoque
-      </a>
-      <a href="{{ url_for('config.index') }}"
-         class="sidebar-item {% if request.endpoint and 'config' in request.endpoint %}active{% endif %}">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-        Configurações
-      </a>
     </nav>
 
     <!-- User -->
-    <div class="px-3 py-4 border-t border-gray-700 space-y-3">
+    <div style="padding: 10px 8px 14px; border-top: 1px solid var(--border);">
       {% if current_user.is_authenticated %}
 
-      <!-- CTA upgrade (só para free) -->
       {% if not current_user.is_pro %}
-      <a href="{{ url_for('billing.upgrade') }}"
-         class="flex items-center gap-2 px-3 py-2.5 rounded-lg bg-brand/10 border border-brand/30 hover:bg-brand/20 transition-colors">
-        <svg class="w-4 h-4 text-brand shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <a href="{{ url_for('billing.upgrade') }}" class="upgrade-cta" style="margin-bottom: 10px; display: flex;">
+        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="color: var(--accent);">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
         </svg>
-        <div class="min-w-0">
-          <p class="text-xs font-semibold text-brand leading-none">Assinar Pro</p>
-          <p class="text-[10px] text-brand/60 mt-0.5">R$ 29,90/mês &middot; Chat IA</p>
+        <div style="min-width: 0;">
+          <p style="font-size: 12px; font-weight: 600; color: var(--accent); line-height: 1.2;">Assinar Pro</p>
+          <p style="font-size: 11px; color: rgba(240,146,42,0.5); margin-top: 2px;">R$ 29,90/mês &middot; Chat IA</p>
         </div>
       </a>
       {% endif %}
 
-      <div class="flex items-center gap-3 px-3 py-2">
-        <div class="w-7 h-7 rounded-full bg-brand/20 border border-brand/40 flex items-center justify-center text-brand text-xs font-bold">
+      <div style="display: flex; align-items: center; gap: 10px; padding: 5px 6px; border-radius: 6px;">
+        <div style="width: 28px; height: 28px; border-radius: 50%; background: rgba(240,146,42,0.12); border: 1px solid rgba(240,146,42,0.25); display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-family: 'IBM Plex Mono', monospace; font-size: 12px; font-weight: 600; color: var(--accent);">
           {{ current_user.nome[0].upper() }}
         </div>
-        <div class="flex-1 min-w-0">
-          <p class="text-sm text-white truncate">{{ current_user.nome }}</p>
-          <p class="text-xs text-gray-500">
+        <div style="flex: 1; min-width: 0;">
+          <p style="font-size: 13px; color: var(--text-pri); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ current_user.nome }}</p>
+          <p style="font-size: 11px; color: var(--text-muted);">
             {% if current_user.is_pro %}
-              <span class="text-brand">Pro</span>
-              &middot;
+              <span style="color: var(--accent);">Pro</span> &middot;
               <form action="{{ url_for('billing.portal') }}" method="POST" class="inline">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <button type="submit" class="hover:text-gray-300 transition-colors">gerenciar</button>
+                <button type="submit" style="background: none; border: none; padding: 0; cursor: pointer; font-size: 11px; color: var(--text-muted); font-family: inherit; transition: color 0.12s;" onmouseover="this.style.color='var(--text-sec)'" onmouseout="this.style.color='var(--text-muted)'">gerenciar</button>
               </form>
             {% else %}Grátis{% endif %}
           </p>
         </div>
-        <a href="{{ url_for('auth.logout') }}" onclick="sessionStorage.removeItem('flux_chat_history')" class="text-gray-500 hover:text-red-400 transition-colors" title="Sair">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+        <a href="{{ url_for('auth.logout') }}" onclick="sessionStorage.removeItem('flux_chat_history')"
+           style="color: var(--text-muted); transition: color 0.12s; flex-shrink: 0;"
+           onmouseover="this.style.color='var(--loss)'" onmouseout="this.style.color='var(--text-muted)'"
+           title="Sair">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
         </a>
       </div>
       {% endif %}
     </div>
   </aside>
 
-  <!-- Drawer mobile -->
+  <!-- ── Mobile drawer backdrop ── -->
   <div id="mobile-drawer-backdrop"
-       class="lg:hidden fixed inset-0 z-40 bg-black/60 hidden"
+       class="lg:hidden fixed inset-0 z-40"
+       style="background: rgba(0,0,0,0.65); backdrop-filter: blur(2px); display: none;"
        onclick="closeDrawer()"></div>
 
+  <!-- ── Mobile drawer ── -->
   <div id="mobile-drawer"
-       class="lg:hidden fixed inset-y-0 left-0 z-50 w-64 bg-gray-800 border-r border-gray-700
-              flex flex-col transform -translate-x-full transition-transform duration-300">
-    <!-- Header do drawer -->
-    <div class="flex items-center justify-between px-6 py-5 border-b border-gray-700">
-      <div class="flex items-center gap-3">
-        <div class="w-8 h-8 rounded-lg bg-brand flex items-center justify-center text-white font-bold text-sm">F</div>
-        <div class="min-w-0">
-          <p class="text-white font-semibold text-sm leading-none">Flux</p>
-          <p class="text-gray-500 text-xs mt-0.5 truncate">{{ nome_negocio }}</p>
+       class="lg:hidden fixed inset-y-0 left-0 z-50 flex flex-col">
+
+    <div style="display: flex; align-items: center; justify-content: space-between; padding: 16px 18px; border-bottom: 1px solid var(--border);">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <div style="width: 28px; height: 28px; background: var(--accent); border-radius: 7px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+          <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M2 7h10M7 2v10" stroke="#09060a" stroke-width="2.5" stroke-linecap="round"/></svg>
         </div>
+        <p style="font-family: 'Syne', sans-serif; font-weight: 700; font-size: 14px; color: var(--text-pri); letter-spacing: -0.02em;">flux</p>
       </div>
-      <button onclick="closeDrawer()" class="text-gray-400 hover:text-white transition-colors">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-        </svg>
+      <button onclick="closeDrawer()" style="background: none; border: none; cursor: pointer; color: var(--text-sec); padding: 4px; line-height: 0;">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
       </button>
     </div>
 
-    <!-- Nav -->
-    <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+    <nav style="flex: 1; padding: 10px 8px; display: flex; flex-direction: column; gap: 1px; overflow-y: auto;">
       <a href="{{ url_for('dashboard.index') }}" onclick="closeDrawer()"
-         class="sidebar-item {% if request.endpoint == 'dashboard.index' %}active{% endif %}">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h4a1 1 0 011 1v5a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h4a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM14 5a1 1 0 011-1h4a1 1 0 011 1v3a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM14 12a1 1 0 011-1h4a1 1 0 011 1v6a1 1 0 01-1 1h-4a1 1 0 01-1-1v-6z"/></svg>
+         class="nav-item {% if request.endpoint == 'dashboard.index' %}active{% endif %}">
+        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M4 5a1 1 0 011-1h4a1 1 0 011 1v5a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h4a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM14 5a1 1 0 011-1h4a1 1 0 011 1v3a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM14 12a1 1 0 011-1h4a1 1 0 011 1v6a1 1 0 01-1 1h-4a1 1 0 01-1-1v-6z"/></svg>
         Dashboard
       </a>
+      <a href="{{ url_for('lancamento.index') }}" onclick="closeDrawer()"
+         class="nav-item {% if request.endpoint and 'lancamento' in request.endpoint %}active{% endif %}">
+        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M12 4v16m8-8H4"/></svg>
+        Lançar
+      </a>
+      <a href="{{ url_for('receitas.index') }}" onclick="closeDrawer()"
+         class="nav-item {% if request.endpoint and 'receitas' in request.endpoint %}active{% endif %}">
+        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        Receitas
+      </a>
+      <a href="{{ url_for('despesas.index') }}" onclick="closeDrawer()"
+         class="nav-item {% if request.endpoint and 'despesas' in request.endpoint %}active{% endif %}">
+        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+        Despesas
+      </a>
+      <a href="{{ url_for('estoque.index') }}" onclick="closeDrawer()"
+         class="nav-item {% if request.endpoint and 'estoque' in request.endpoint %}active{% endif %}">
+        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+        Estoque
+      </a>
+      <a href="{{ url_for('config.index') }}" onclick="closeDrawer()"
+         class="nav-item {% if request.endpoint and 'config' in request.endpoint %}active{% endif %}">
+        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+        Configurações
+      </a>
+      <div style="height: 1px; background: var(--border); margin: 6px 2px;"></div>
       {% if current_user.is_authenticated and current_user.is_pro %}
       <a href="{{ url_for('chat.index') }}" onclick="closeDrawer()"
-         class="sidebar-item {% if request.endpoint and 'chat' in request.endpoint %}active{% endif %}">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
+         class="nav-item {% if request.endpoint and 'chat' in request.endpoint %}active{% endif %}">
+        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
         Chat IA
       </a>
       {% else %}
       <a href="{{ url_for('billing.upgrade') }}" onclick="closeDrawer()"
-         class="sidebar-item {% if request.endpoint and 'billing' in request.endpoint %}active{% endif %}">
-        <svg class="w-5 h-5 text-brand/70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/></svg>
-        <span class="text-gray-300">Chat IA</span>
-        <span class="ml-auto text-[10px] bg-brand/20 text-brand px-1.5 py-0.5 rounded font-semibold">Pro</span>
+         class="nav-item {% if request.endpoint and 'billing' in request.endpoint %}active{% endif %}">
+        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="color: var(--accent); opacity: 0.7;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/></svg>
+        <span style="color: var(--text-sec);">Chat IA</span>
+        <span class="pro-badge" style="margin-left: auto;">PRO</span>
       </a>
       {% endif %}
-      <a href="{{ url_for('lancamento.index') }}" onclick="closeDrawer()"
-         class="sidebar-item {% if request.endpoint and 'lancamento' in request.endpoint %}active{% endif %}">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-        Lançar
-      </a>
-      <a href="{{ url_for('receitas.index') }}" onclick="closeDrawer()"
-         class="sidebar-item {% if request.endpoint and 'receitas' in request.endpoint %}active{% endif %}">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-        Receitas
-      </a>
-      <a href="{{ url_for('despesas.index') }}" onclick="closeDrawer()"
-         class="sidebar-item {% if request.endpoint and 'despesas' in request.endpoint %}active{% endif %}">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
-        Despesas
-      </a>
-      <a href="{{ url_for('estoque.index') }}" onclick="closeDrawer()"
-         class="sidebar-item {% if request.endpoint and 'estoque' in request.endpoint %}active{% endif %}">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
-        Estoque
-      </a>
-      <a href="{{ url_for('config.index') }}" onclick="closeDrawer()"
-         class="sidebar-item {% if request.endpoint and 'config' in request.endpoint %}active{% endif %}">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-        Configurações
-      </a>
     </nav>
 
-    <!-- User -->
-    <div class="px-3 py-4 border-t border-gray-700">
+    <div style="padding: 10px 8px 14px; border-top: 1px solid var(--border);">
       {% if current_user.is_authenticated %}
-      <div class="flex items-center gap-3 px-3 py-2">
-        <div class="w-7 h-7 rounded-full bg-brand/20 border border-brand/40 flex items-center justify-center text-brand text-xs font-bold">
+      <div style="display: flex; align-items: center; gap: 10px; padding: 5px 6px;">
+        <div style="width: 28px; height: 28px; border-radius: 50%; background: rgba(240,146,42,0.12); border: 1px solid rgba(240,146,42,0.25); display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-family: 'IBM Plex Mono', monospace; font-size: 12px; font-weight: 600; color: var(--accent);">
           {{ current_user.nome[0].upper() }}
         </div>
-        <div class="flex-1 min-w-0">
-          <p class="text-sm text-white truncate">{{ current_user.nome }}</p>
-          <p class="text-xs text-gray-500">{{ 'Pro' if current_user.is_pro else 'Grátis' }}</p>
+        <div style="flex: 1; min-width: 0;">
+          <p style="font-size: 13px; color: var(--text-pri); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ current_user.nome }}</p>
+          <p style="font-size: 11px; color: var(--text-muted);">{{ 'Pro' if current_user.is_pro else 'Grátis' }}</p>
         </div>
         <a href="{{ url_for('auth.logout') }}" onclick="sessionStorage.removeItem('flux_chat_history')"
-           class="text-gray-500 hover:text-red-400 transition-colors" title="Sair">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+           style="color: var(--text-muted); transition: color 0.12s; flex-shrink: 0;"
+           onmouseover="this.style.color='var(--loss)'" onmouseout="this.style.color='var(--text-muted)'"
+           title="Sair">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
         </a>
       </div>
       {% endif %}
     </div>
   </div>
 
-  <!-- Main content -->
+  <!-- ── Main content ── -->
   <div class="flex-1 flex flex-col min-h-0 overflow-auto">
+
     <!-- Mobile header -->
-    <header class="lg:hidden flex items-center justify-between px-4 py-3 bg-gray-800 border-b border-gray-700">
-      <div class="flex items-center gap-2">
-        <button onclick="openDrawer()" class="text-gray-400 hover:text-white transition-colors mr-1">
-          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
-          </svg>
+    <header class="lg:hidden flex items-center justify-between px-4 py-3"
+            style="background: var(--bg-surface); border-bottom: 1px solid var(--border);">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <button onclick="openDrawer()" style="background: none; border: none; cursor: pointer; color: var(--text-sec); padding: 2px; line-height: 0; margin-right: 4px;">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
         </button>
-        <div class="w-7 h-7 rounded-lg bg-brand flex items-center justify-center text-white font-bold text-xs">F</div>
-        <span class="text-white font-semibold text-sm">Flux</span>
+        <div style="width: 26px; height: 26px; background: var(--accent); border-radius: 6px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+          <svg width="11" height="11" viewBox="0 0 14 14" fill="none"><path d="M2 7h10M7 2v10" stroke="#09060a" stroke-width="2.5" stroke-linecap="round"/></svg>
+        </div>
+        <span style="font-family: 'Syne', sans-serif; font-weight: 700; font-size: 14px; color: var(--text-pri); letter-spacing: -0.02em;">flux</span>
       </div>
-      <a href="{{ url_for('auth.logout') }}" onclick="sessionStorage.removeItem('flux_chat_history')" class="text-gray-400 hover:text-red-400 transition-colors">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+      <a href="{{ url_for('auth.logout') }}" onclick="sessionStorage.removeItem('flux_chat_history')"
+         style="color: var(--text-muted); transition: color 0.12s;"
+         onmouseover="this.style.color='var(--loss)'" onmouseout="this.style.color='var(--text-muted)'">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
       </a>
     </header>
 
-    <main class="flex-1 p-6">
+    <main class="flex-1 p-6 lg:p-8">
       {% block content %}{% endblock %}
     </main>
   </div>
@@ -272,13 +623,13 @@
 
 <script>
   function openDrawer() {
-    document.getElementById('mobile-drawer').classList.remove('-translate-x-full');
-    document.getElementById('mobile-drawer-backdrop').classList.remove('hidden');
+    document.getElementById('mobile-drawer').style.transform = 'translateX(0)';
+    document.getElementById('mobile-drawer-backdrop').style.display = 'block';
     document.body.style.overflow = 'hidden';
   }
   function closeDrawer() {
-    document.getElementById('mobile-drawer').classList.add('-translate-x-full');
-    document.getElementById('mobile-drawer-backdrop').classList.add('hidden');
+    document.getElementById('mobile-drawer').style.transform = 'translateX(-100%)';
+    document.getElementById('mobile-drawer-backdrop').style.display = 'none';
     document.body.style.overflow = '';
   }
 </script>
@@ -286,7 +637,6 @@
 
 <script src="{{ url_for('static', filename='js/sync.js') }}"></script>
 <script>
-  // Injeta CSRF token em todas as requisições HTMX
   const _csrfToken = document.querySelector('meta[name="csrf-token"]').content;
   document.body.addEventListener('htmx:configRequest', (e) => {
     e.detail.headers['X-CSRFToken'] = _csrfToken;

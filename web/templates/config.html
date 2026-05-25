@@ -1,48 +1,34 @@
 {% extends "base.html" %}
-{% block title %}Configurações — Flux Barber{% endblock %}
+{% block title %}Configurações — Flux{% endblock %}
 
 {% block content %}
-<div class="max-w-5xl mx-auto space-y-6">
+<div style="max-width: 1100px; margin: 0 auto;">
 
-  <h1 class="text-xl font-bold text-white">Configurações</h1>
+  <h1 style="font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 700; color: var(--text-pri); letter-spacing: -0.025em; line-height: 1.1; margin: 0 0 24px;">
+    Configurações
+  </h1>
 
   <!-- Tab nav principal (4 grupos) -->
-  <div class="flex gap-1 bg-gray-800 rounded-xl p-1 border border-gray-700 overflow-x-auto">
-    {% set grupo_catalogo = tab in ['servicos', 'produtos'] %}
-    {% set grupo_despesas = tab in ['categorias', 'itens'] %}
-    <a href="{{ url_for('config.index', tab='negocio') }}"
-       class="px-4 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap
-              {{ 'text-white bg-gray-700' if tab == 'negocio' else 'text-gray-400 hover:text-white' }}">
-      Negócio
-    </a>
-    <a href="{{ url_for('config.index', tab='servicos') }}"
-       class="px-4 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap
-              {{ 'text-white bg-gray-700' if grupo_catalogo else 'text-gray-400 hover:text-white' }}">
-      Catálogo
-    </a>
-    <a href="{{ url_for('config.index', tab='categorias') }}"
-       class="px-4 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap
-              {{ 'text-white bg-gray-700' if grupo_despesas else 'text-gray-400 hover:text-white' }}">
-      Despesas
-    </a>
-    <a href="{{ url_for('config.index', tab='conta') }}"
-       class="px-4 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap
-              {{ 'text-white bg-gray-700' if tab == 'conta' else 'text-gray-400 hover:text-white' }}">
-      Conta
-    </a>
+  {% set grupo_catalogo = tab in ['servicos', 'produtos'] %}
+  {% set grupo_despesas = tab in ['categorias', 'itens'] %}
+  <div style="display: flex; gap: 4px; border-bottom: 1px solid var(--border); margin-bottom: 24px; overflow-x: auto;">
+    <a href="{{ url_for('config.index', tab='negocio') }}" class="tab-btn {{ 'active' if tab == 'negocio' else '' }}">Negócio</a>
+    <a href="{{ url_for('config.index', tab='servicos') }}" class="tab-btn {{ 'active' if grupo_catalogo else '' }}">Catálogo</a>
+    <a href="{{ url_for('config.index', tab='categorias') }}" class="tab-btn {{ 'active' if grupo_despesas else '' }}">Despesas</a>
+    <a href="{{ url_for('config.index', tab='conta') }}" class="tab-btn {{ 'active' if tab == 'conta' else '' }}">Conta</a>
   </div>
 
   <!-- Sub-tabs: Catálogo -->
   {% if grupo_catalogo %}
-  <div class="flex gap-1 bg-gray-700/40 rounded-lg p-1 w-fit border border-gray-700/60">
+  <div style="display: flex; gap: 4px; margin-bottom: 20px;">
     <a href="{{ url_for('config.index', tab='servicos') }}"
-       class="px-3 py-1.5 text-xs font-medium rounded-md transition-colors whitespace-nowrap
-              {{ 'text-white bg-gray-600' if tab == 'servicos' else 'text-gray-400 hover:text-white' }}">
+       style="font-size: 12px; font-weight: 500; padding: 5px 12px; border-radius: 6px; text-decoration: none; transition: all 0.15s;
+              {{ 'background: var(--bg-elevated); color: var(--text-pri);' if tab == 'servicos' else 'color: var(--text-muted);' }}">
       Serviços
     </a>
     <a href="{{ url_for('config.index', tab='produtos') }}"
-       class="px-3 py-1.5 text-xs font-medium rounded-md transition-colors whitespace-nowrap
-              {{ 'text-white bg-gray-600' if tab == 'produtos' else 'text-gray-400 hover:text-white' }}">
+       style="font-size: 12px; font-weight: 500; padding: 5px 12px; border-radius: 6px; text-decoration: none; transition: all 0.15s;
+              {{ 'background: var(--bg-elevated); color: var(--text-pri);' if tab == 'produtos' else 'color: var(--text-muted);' }}">
       Produtos
     </a>
   </div>
@@ -50,88 +36,80 @@
 
   <!-- Sub-tabs: Despesas -->
   {% if grupo_despesas %}
-  <div class="flex gap-1 bg-gray-700/40 rounded-lg p-1 w-fit border border-gray-700/60">
+  <div style="display: flex; gap: 4px; margin-bottom: 20px;">
     <a href="{{ url_for('config.index', tab='categorias') }}"
-       class="px-3 py-1.5 text-xs font-medium rounded-md transition-colors whitespace-nowrap
-              {{ 'text-white bg-gray-600' if tab == 'categorias' else 'text-gray-400 hover:text-white' }}">
+       style="font-size: 12px; font-weight: 500; padding: 5px 12px; border-radius: 6px; text-decoration: none; transition: all 0.15s;
+              {{ 'background: var(--bg-elevated); color: var(--text-pri);' if tab == 'categorias' else 'color: var(--text-muted);' }}">
       Categorias
     </a>
     <a href="{{ url_for('config.index', tab='itens') }}"
-       class="px-3 py-1.5 text-xs font-medium rounded-md transition-colors whitespace-nowrap
-              {{ 'text-white bg-gray-600' if tab == 'itens' else 'text-gray-400 hover:text-white' }}">
+       style="font-size: 12px; font-weight: 500; padding: 5px 12px; border-radius: 6px; text-decoration: none; transition: all 0.15s;
+              {{ 'background: var(--bg-elevated); color: var(--text-pri);' if tab == 'itens' else 'color: var(--text-muted);' }}">
       Itens frequentes
     </a>
   </div>
   {% endif %}
 
-  {# ── Negócio ────────────────────────────────────────────────────────────── #}
+  {# ── Negócio ─────────────────────────────────────────────────────────────── #}
   {% if tab == 'negocio' %}
   <form method="POST" action="{{ url_for('config.negocio_update') }}">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <div class="grid lg:grid-cols-2 gap-6">
 
       <!-- Identidade -->
-      <div class="bg-gray-800 border border-gray-700 rounded-xl p-6 space-y-5">
-        <h3 class="text-sm font-semibold text-white">Identidade do negócio</h3>
+      <div class="card" style="padding: 24px; display: flex; flex-direction: column; gap: 16px;">
+        <p style="font-size: 13px; font-weight: 600; color: var(--text-pri);">Identidade do negócio</p>
         <div>
-          <label class="block text-xs font-medium text-gray-400 mb-1.5">Nome do negócio</label>
-          <input type="text" name="nome_negocio" required value="{{ negocio.nome_negocio }}"
-                 class="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2.5 text-white text-sm focus:ring-2 focus:ring-brand focus:outline-none">
+          <label style="display: block; font-size: 11px; font-weight: 500; color: var(--text-muted); margin-bottom: 6px;">Nome do negócio</label>
+          <input type="text" name="nome_negocio" required value="{{ negocio.nome_negocio }}">
         </div>
         <div>
-          <label class="block text-xs font-medium text-gray-400 mb-1.5">Descrição / segmento</label>
-          <textarea name="descricao_negocio" rows="3"
-                    placeholder="O que você vende ou faz…"
-                    class="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2.5 text-white text-sm focus:ring-2 focus:ring-brand focus:outline-none resize-none">{{ negocio.descricao_negocio }}</textarea>
-          <p class="text-xs text-gray-500 mt-1">Usado pelo assistente de IA para personalizar as respostas.</p>
+          <label style="display: block; font-size: 11px; font-weight: 500; color: var(--text-muted); margin-bottom: 6px;">Descrição / segmento</label>
+          <textarea name="descricao_negocio" rows="3" placeholder="O que você vende ou faz…" style="resize: none;">{{ negocio.descricao_negocio }}</textarea>
+          <p style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">Usado pelo assistente de IA para personalizar as respostas.</p>
         </div>
         <div>
-          <label class="block text-xs font-medium text-gray-400 mb-1.5">Horário de funcionamento</label>
-          <input type="text" name="horario_trabalho" value="{{ negocio.horario_trabalho }}"
-                 placeholder="Ex: Seg–Sáb, 9h às 19h"
-                 class="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2.5 text-white text-sm focus:ring-2 focus:ring-brand focus:outline-none">
+          <label style="display: block; font-size: 11px; font-weight: 500; color: var(--text-muted); margin-bottom: 6px;">Horário de funcionamento</label>
+          <input type="text" name="horario_trabalho" value="{{ negocio.horario_trabalho }}" placeholder="Ex: Seg–Sáb, 9h às 19h">
         </div>
       </div>
 
       <!-- O que registra + Pagamentos -->
-      <div class="space-y-6">
-        <div class="bg-gray-800 border border-gray-700 rounded-xl p-6 space-y-3">
-          <h3 class="text-sm font-semibold text-white">O que você registra</h3>
+      <div style="display: flex; flex-direction: column; gap: 16px;">
+        <div class="card" style="padding: 24px; display: flex; flex-direction: column; gap: 12px;">
+          <p style="font-size: 13px; font-weight: 600; color: var(--text-pri);">O que você registra</p>
           {% for val, label, desc in [
             ('servicos', 'Serviços', 'Cortes, consultas, aulas, reparos…'),
             ('produtos', 'Produtos', 'Revenda, games, cosméticos…'),
             ('ambos', 'Serviços e produtos', 'Atendimento + venda de itens físicos'),
           ] %}
-          <label class="flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors
-                        {{ 'border-brand bg-brand/10' if negocio.tipo_trabalho == val else 'border-gray-700 hover:border-gray-500' }}">
+          <label style="display: flex; align-items: flex-start; gap: 12px; padding: 12px; border-radius: 8px; border: 1px solid {{ 'var(--accent)' if negocio.tipo_trabalho == val else 'var(--border)' }}; cursor: pointer; transition: border-color 0.15s; background: {{ 'rgba(240,146,42,0.06)' if negocio.tipo_trabalho == val else 'transparent' }};">
             <input type="radio" name="tipo_trabalho" value="{{ val }}"
                    {{ 'checked' if negocio.tipo_trabalho == val else '' }}
-                   class="mt-0.5 accent-emerald-500 shrink-0">
+                   style="margin-top: 2px; accent-color: var(--accent); flex-shrink: 0;">
             <span>
-              <span class="block text-sm font-medium text-white">{{ label }}</span>
-              <span class="block text-xs text-gray-400">{{ desc }}</span>
+              <span style="display: block; font-size: 13px; font-weight: 500; color: var(--text-pri);">{{ label }}</span>
+              <span style="display: block; font-size: 11px; color: var(--text-muted); margin-top: 2px;">{{ desc }}</span>
             </span>
           </label>
           {% endfor %}
         </div>
 
-        <div class="bg-gray-800 border border-gray-700 rounded-xl p-6 space-y-3">
-          <h3 class="text-sm font-semibold text-white">Formas de pagamento aceitas</h3>
-          <div class="flex flex-wrap gap-2">
+        <div class="card" style="padding: 24px; display: flex; flex-direction: column; gap: 12px;">
+          <p style="font-size: 13px; font-weight: 600; color: var(--text-pri);">Formas de pagamento aceitas</p>
+          <div style="display: flex; flex-wrap: wrap; gap: 8px;">
             {% for val, label in [('PIX','PIX'),('DINHEIRO','Dinheiro'),('MAQUININHA','Maquininha')] %}
-            <label class="flex items-center gap-2 px-4 py-2 rounded-full border cursor-pointer transition-colors
-                          {{ 'border-brand bg-brand/10 text-brand' if val in negocio.formas_pagamento else 'border-gray-600 text-gray-400 hover:border-gray-400' }}">
+            <label style="display: flex; align-items: center; gap: 8px; padding: 6px 14px; border-radius: 99px; border: 1px solid {{ 'var(--accent)' if val in negocio.formas_pagamento else 'var(--border)' }}; cursor: pointer; transition: all 0.15s; color: {{ 'var(--accent)' if val in negocio.formas_pagamento else 'var(--text-muted)' }};">
               <input type="checkbox" name="formas_pagamento" value="{{ val }}"
                      {{ 'checked' if val in negocio.formas_pagamento else '' }}
-                     class="accent-emerald-500">
-              <span class="text-sm font-medium">{{ label }}</span>
+                     style="accent-color: var(--accent);">
+              <span style="font-size: 13px; font-weight: 500;">{{ label }}</span>
             </label>
             {% endfor %}
           </div>
-          <div class="pt-1">
-            <label class="block text-xs font-medium text-gray-400 mb-1.5">Forma padrão ao lançar</label>
-            <select name="forma_pagamento_padrao"
-                    class="bg-gray-900 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm focus:ring-2 focus:ring-brand focus:outline-none">
+          <div>
+            <label style="display: block; font-size: 11px; font-weight: 500; color: var(--text-muted); margin-bottom: 6px;">Forma padrão ao lançar</label>
+            <select name="forma_pagamento_padrao">
               {% for val, label in [('PIX','PIX'),('DINHEIRO','Dinheiro'),('MAQUININHA','Maquininha')] %}
               <option value="{{ val }}" {{ 'selected' if negocio.forma_pagamento_padrao == val else '' }}>{{ label }}</option>
               {% endfor %}
@@ -142,518 +120,475 @@
 
     </div>
 
-    <div class="mt-4 flex justify-end">
-      <button type="submit"
-              class="px-6 py-2.5 text-sm font-semibold rounded-lg bg-brand hover:bg-emerald-600 text-white transition-colors">
-        Salvar alterações
-      </button>
+    <div style="margin-top: 16px; display: flex; justify-content: flex-end;">
+      <button type="submit" class="btn-accent">Salvar alterações</button>
     </div>
   </form>
   {% endif %}
 
-  {# ── Serviços ───────────────────────────────────────────────────────────── #}
+  {# ── Serviços ─────────────────────────────────────────────────────────────── #}
   {% if tab == 'servicos' %}
-  <div class="bg-gray-800 border border-gray-700 rounded-xl overflow-hidden">
-    <div class="flex items-center justify-between px-5 py-4 border-b border-gray-700">
-      <h3 class="text-sm font-semibold text-white">Serviços ({{ servicos|length }})</h3>
-      <button onclick="abrirNovoServico()"
-              class="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-brand hover:bg-emerald-600 text-white transition-colors">
-        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+  <div class="card" style="overflow: hidden;">
+    <div style="display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border-bottom: 1px solid var(--border);">
+      <p style="font-size: 13px; font-weight: 600; color: var(--text-pri);">Serviços ({{ servicos|length }})</p>
+      <button onclick="abrirNovoServico()" class="btn-accent" style="padding: 5px 12px; font-size: 12px; gap: 5px;">
+        <svg style="width: 11px; height: 11px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
         Novo
       </button>
     </div>
-    <table class="w-full text-sm">
+    <table class="data-table" style="width: 100%;">
       <thead>
-        <tr class="text-xs text-gray-500 uppercase tracking-wider border-b border-gray-700">
-          <th class="px-4 py-3 text-left">Nome</th>
-          <th class="px-4 py-3 text-left hidden sm:table-cell">Categoria</th>
-          <th class="px-4 py-3 text-right">Preço</th>
-          <th class="px-4 py-3 text-center">Ord.</th>
-          <th class="px-4 py-3 text-center">Status</th>
-          <th class="px-4 py-3 text-center">Ações</th>
+        <tr>
+          <th style="text-align: left;">Nome</th>
+          <th style="text-align: left;">Categoria</th>
+          <th style="text-align: right;">Preço</th>
+          <th style="text-align: center;">Ord.</th>
+          <th style="text-align: center;">Status</th>
+          <th style="text-align: center;">Ações</th>
         </tr>
       </thead>
-      <tbody class="divide-y divide-gray-700/50">
+      <tbody>
         {% for s in servicos %}
-        <tr class="hover:bg-gray-700/30 transition-colors {% if not s['ativo'] %}opacity-50{% endif %}">
-          <td class="px-4 py-3 text-white font-medium">{{ s['nome'] }}</td>
-          <td class="px-4 py-3 text-gray-400 text-xs hidden sm:table-cell">{{ s['categoria_servico'] or '—' }}</td>
-          <td class="px-4 py-3 text-right text-emerald-400">R$ {{ "%.2f"|format(s['preco_padrao'] / 100) }}</td>
-          <td class="px-4 py-3 text-center text-gray-400 text-xs">{{ s['ordem'] }}</td>
-          <td class="px-4 py-3 text-center">
-            <span class="text-xs px-2 py-0.5 rounded-full
-              {{ 'bg-emerald-500/15 text-emerald-400' if s['ativo'] else 'bg-gray-500/15 text-gray-500' }}">
+        <tr style="{{ 'opacity: 0.45;' if not s['ativo'] else '' }}">
+          <td style="font-size: 13px; font-weight: 500; color: var(--text-pri);">{{ s['nome'] }}</td>
+          <td style="font-size: 11px; color: var(--text-muted);">{{ s['categoria_servico'] or '—' }}</td>
+          <td style="text-align: right;">
+            <span class="kpi-value" style="font-size: 13px; color: var(--profit);">R$&nbsp;{{ "%.2f"|format(s['preco_padrao'] / 100) }}</span>
+          </td>
+          <td style="text-align: center; font-size: 12px; color: var(--text-muted); font-family: 'IBM Plex Mono', monospace;">{{ s['ordem'] }}</td>
+          <td style="text-align: center;">
+            <span style="font-size: 11px; padding: 2px 8px; border-radius: 99px; {{ 'background: rgba(34,211,160,0.12); color: var(--profit);' if s['ativo'] else 'background: var(--bg-elevated); color: var(--text-muted);' }}">
               {{ 'Ativo' if s['ativo'] else 'Inativo' }}
             </span>
           </td>
-          <td class="px-4 py-3 text-center">
-            <div class="flex items-center justify-center gap-1.5">
+          <td style="text-align: center;">
+            <div style="display: flex; align-items: center; justify-content: center; gap: 6px;">
               <button onclick="editServico({{ s['id'] }}, '{{ s['nome']|e }}', {{ s['preco_padrao'] }}, '{{ (s['categoria_servico'] or '')|e }}', {{ s['ordem'] }})"
-                      class="text-xs px-2 py-1 rounded bg-gray-600/50 text-gray-300 hover:bg-gray-600 transition-colors">
+                      style="font-size: 11px; padding: 3px 10px; border-radius: 5px; border: none; cursor: pointer; background: var(--bg-elevated); color: var(--text-sec); transition: background 0.15s;"
+                      onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='var(--bg-elevated)'">
                 Editar
               </button>
               <form method="POST" action="{{ url_for('config.servico_toggle', sid=s['id']) }}" class="inline">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <button type="submit" class="text-xs px-2 py-1 rounded transition-colors
-                  {{ 'bg-red-500/15 text-red-400 hover:bg-red-500/25' if s['ativo'] else 'bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25' }}">
+                <button type="submit"
+                        style="font-size: 11px; padding: 3px 10px; border-radius: 5px; border: none; cursor: pointer; transition: background 0.15s;
+                               {{ 'background: rgba(240,82,82,0.1); color: var(--loss);' if s['ativo'] else 'background: rgba(34,211,160,0.12); color: var(--profit);' }}">
                   {{ 'Desativar' if s['ativo'] else 'Ativar' }}
                 </button>
               </form>
               <form method="POST" action="{{ url_for('config.servico_excluir', sid=s['id']) }}" class="inline"
                     onsubmit="return confirm('Excluir o serviço \'{{ s['nome']|e }}\'? Esta ação não pode ser desfeita.')">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <button type="submit" class="p-1 rounded text-gray-500 hover:text-red-400 hover:bg-red-500/10 transition-colors" title="Excluir">
-                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                <button type="submit" class="icon-btn-danger">
+                  <svg style="width: 13px; height: 13px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                 </button>
               </form>
             </div>
           </td>
         </tr>
         {% else %}
-        <tr><td colspan="6" class="px-4 py-8 text-center text-gray-500">Nenhum serviço cadastrado.</td></tr>
+        <tr><td colspan="6" style="padding: 32px; text-align: center; font-size: 13px; color: var(--text-muted);">Nenhum serviço cadastrado.</td></tr>
         {% endfor %}
       </tbody>
     </table>
   </div>
   {% endif %}
 
-  {# ── Categorias ─────────────────────────────────────────────────────────── #}
+  {# ── Categorias ────────────────────────────────────────────────────────────── #}
   {% if tab == 'categorias' %}
-  <div class="bg-gray-800 border border-gray-700 rounded-xl overflow-hidden">
-    <div class="flex items-center justify-between px-5 py-4 border-b border-gray-700">
-      <h3 class="text-sm font-semibold text-white">Categorias de despesa ({{ categorias|length }})</h3>
-      <button onclick="abrirNovaCategoria()"
-              class="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-brand hover:bg-emerald-600 text-white transition-colors">
-        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+  <div class="card" style="overflow: hidden;">
+    <div style="display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border-bottom: 1px solid var(--border);">
+      <p style="font-size: 13px; font-weight: 600; color: var(--text-pri);">Categorias de despesa ({{ categorias|length }})</p>
+      <button onclick="abrirNovaCategoria()" class="btn-accent" style="padding: 5px 12px; font-size: 12px; gap: 5px;">
+        <svg style="width: 11px; height: 11px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
         Nova
       </button>
     </div>
-    <table class="w-full text-sm">
+    <table class="data-table" style="width: 100%;">
       <thead>
-        <tr class="text-xs text-gray-500 uppercase tracking-wider border-b border-gray-700">
-          <th class="px-4 py-3 text-left">Ícone</th>
-          <th class="px-4 py-3 text-left">Nome</th>
-          <th class="px-4 py-3 text-center">Status</th>
-          <th class="px-4 py-3 text-center">Ações</th>
+        <tr>
+          <th style="text-align: left;">Ícone</th>
+          <th style="text-align: left;">Nome</th>
+          <th style="text-align: center;">Status</th>
+          <th style="text-align: center;">Ações</th>
         </tr>
       </thead>
-      <tbody class="divide-y divide-gray-700/50">
+      <tbody>
         {% for c in categorias %}
-        <tr class="hover:bg-gray-700/30 transition-colors {% if not c['ativo'] %}opacity-50{% endif %}">
-          <td class="px-4 py-3 text-2xl leading-none">{{ c['icone'] or '📦' }}</td>
-          <td class="px-4 py-3 text-white font-medium">{{ c['nome'] }}</td>
-          <td class="px-4 py-3 text-center">
-            <span class="text-xs px-2 py-0.5 rounded-full
-              {{ 'bg-emerald-500/15 text-emerald-400' if c['ativo'] else 'bg-gray-500/15 text-gray-500' }}">
+        <tr style="{{ 'opacity: 0.45;' if not c['ativo'] else '' }}">
+          <td style="font-size: 20px; line-height: 1;">{{ c['icone'] or '📦' }}</td>
+          <td style="font-size: 13px; font-weight: 500; color: var(--text-pri);">{{ c['nome'] }}</td>
+          <td style="text-align: center;">
+            <span style="font-size: 11px; padding: 2px 8px; border-radius: 99px; {{ 'background: rgba(34,211,160,0.12); color: var(--profit);' if c['ativo'] else 'background: var(--bg-elevated); color: var(--text-muted);' }}">
               {{ 'Ativa' if c['ativo'] else 'Inativa' }}
             </span>
           </td>
-          <td class="px-4 py-3 text-center">
-            <div class="flex items-center justify-center gap-1.5">
+          <td style="text-align: center;">
+            <div style="display: flex; align-items: center; justify-content: center; gap: 6px;">
               <button onclick="editCategoria({{ c['id'] }}, '{{ c['nome']|e }}', '{{ (c['icone'] or '')|e }}')"
-                      class="text-xs px-2 py-1 rounded bg-gray-600/50 text-gray-300 hover:bg-gray-600 transition-colors">
+                      style="font-size: 11px; padding: 3px 10px; border-radius: 5px; border: none; cursor: pointer; background: var(--bg-elevated); color: var(--text-sec); transition: background 0.15s;"
+                      onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='var(--bg-elevated)'">
                 Editar
               </button>
               <form method="POST" action="{{ url_for('config.categoria_toggle', cid=c['id']) }}" class="inline">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <button type="submit" class="text-xs px-2 py-1 rounded transition-colors
-                  {{ 'bg-red-500/15 text-red-400 hover:bg-red-500/25' if c['ativo'] else 'bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25' }}">
+                <button type="submit"
+                        style="font-size: 11px; padding: 3px 10px; border-radius: 5px; border: none; cursor: pointer; transition: background 0.15s;
+                               {{ 'background: rgba(240,82,82,0.1); color: var(--loss);' if c['ativo'] else 'background: rgba(34,211,160,0.12); color: var(--profit);' }}">
                   {{ 'Desativar' if c['ativo'] else 'Ativar' }}
                 </button>
               </form>
               <form method="POST" action="{{ url_for('config.categoria_excluir', cid=c['id']) }}" class="inline"
-                    onsubmit="return confirm('Excluir a categoria \'{{ c['nome']|e }}\'? Esta ação não pode ser desfeita.')">
+                    onsubmit="return confirm('Excluir a categoria \'{{ c['nome']|e }}\'?')">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <button type="submit" class="p-1 rounded text-gray-500 hover:text-red-400 hover:bg-red-500/10 transition-colors" title="Excluir">
-                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                <button type="submit" class="icon-btn-danger">
+                  <svg style="width: 13px; height: 13px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                 </button>
               </form>
             </div>
           </td>
         </tr>
         {% else %}
-        <tr><td colspan="4" class="px-4 py-8 text-center text-gray-500">Nenhuma categoria cadastrada.</td></tr>
+        <tr><td colspan="4" style="padding: 32px; text-align: center; font-size: 13px; color: var(--text-muted);">Nenhuma categoria cadastrada.</td></tr>
         {% endfor %}
       </tbody>
     </table>
   </div>
   {% endif %}
 
-  {# ── Itens frequentes ───────────────────────────────────────────────────── #}
+  {# ── Itens frequentes ──────────────────────────────────────────────────────── #}
   {% if tab == 'itens' %}
-  <div class="bg-gray-800 border border-gray-700 rounded-xl overflow-hidden">
-    <div class="flex items-center justify-between px-5 py-4 border-b border-gray-700">
-      <h3 class="text-sm font-semibold text-white">Itens frequentes ({{ itens|length }})</h3>
-      <button onclick="abrirNovoItem()"
-              class="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-brand hover:bg-emerald-600 text-white transition-colors">
-        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+  <div class="card" style="overflow: hidden;">
+    <div style="display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border-bottom: 1px solid var(--border);">
+      <p style="font-size: 13px; font-weight: 600; color: var(--text-pri);">Itens frequentes ({{ itens|length }})</p>
+      <button onclick="abrirNovoItem()" class="btn-accent" style="padding: 5px 12px; font-size: 12px; gap: 5px;">
+        <svg style="width: 11px; height: 11px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
         Novo
       </button>
     </div>
-    <table class="w-full text-sm">
+    <table class="data-table" style="width: 100%;">
       <thead>
-        <tr class="text-xs text-gray-500 uppercase tracking-wider border-b border-gray-700">
-          <th class="px-4 py-3 text-left">Descrição</th>
-          <th class="px-4 py-3 text-left hidden sm:table-cell">Categoria</th>
-          <th class="px-4 py-3 text-right hidden sm:table-cell">Valor sugerido</th>
-          <th class="px-4 py-3 text-center hidden sm:table-cell">Usos</th>
-          <th class="px-4 py-3 text-center">Status</th>
-          <th class="px-4 py-3 text-center">Ações</th>
+        <tr>
+          <th style="text-align: left;">Descrição</th>
+          <th style="text-align: left;">Categoria</th>
+          <th style="text-align: right;">Valor sugerido</th>
+          <th style="text-align: center;">Usos</th>
+          <th style="text-align: center;">Status</th>
+          <th style="text-align: center;">Ações</th>
         </tr>
       </thead>
-      <tbody class="divide-y divide-gray-700/50">
+      <tbody>
         {% for i in itens %}
-        <tr class="hover:bg-gray-700/30 transition-colors {% if not i['ativo'] %}opacity-50{% endif %}">
-          <td class="px-4 py-3 text-white">{{ i['descricao'] }}</td>
-          <td class="px-4 py-3 text-gray-400 text-xs hidden sm:table-cell">{{ i['categoria_nome'] }}</td>
-          <td class="px-4 py-3 text-right text-gray-400 text-xs hidden sm:table-cell">
-            {% if i['valor_sugerido'] %}R$ {{ "%.2f"|format(i['valor_sugerido'] / 100) }}{% else %}—{% endif %}
+        <tr style="{{ 'opacity: 0.45;' if not i['ativo'] else '' }}">
+          <td style="font-size: 13px; color: var(--text-pri);">{{ i['descricao'] }}</td>
+          <td style="font-size: 11px; color: var(--text-muted);">{{ i['categoria_nome'] }}</td>
+          <td style="text-align: right; font-size: 12px; color: var(--text-muted); font-family: 'IBM Plex Mono', monospace;">
+            {% if i['valor_sugerido'] %}R$&nbsp;{{ "%.2f"|format(i['valor_sugerido'] / 100) }}{% else %}—{% endif %}
           </td>
-          <td class="px-4 py-3 text-center text-gray-500 text-xs hidden sm:table-cell">{{ i['vezes_usado'] }}</td>
-          <td class="px-4 py-3 text-center">
-            <span class="text-xs px-2 py-0.5 rounded-full
-              {{ 'bg-emerald-500/15 text-emerald-400' if i['ativo'] else 'bg-gray-500/15 text-gray-500' }}">
+          <td style="text-align: center; font-size: 12px; color: var(--text-muted); font-family: 'IBM Plex Mono', monospace;">{{ i['vezes_usado'] }}</td>
+          <td style="text-align: center;">
+            <span style="font-size: 11px; padding: 2px 8px; border-radius: 99px; {{ 'background: rgba(34,211,160,0.12); color: var(--profit);' if i['ativo'] else 'background: var(--bg-elevated); color: var(--text-muted);' }}">
               {{ 'Ativo' if i['ativo'] else 'Inativo' }}
             </span>
           </td>
-          <td class="px-4 py-3 text-center">
-            <div class="flex items-center justify-center gap-1.5">
+          <td style="text-align: center;">
+            <div style="display: flex; align-items: center; justify-content: center; gap: 6px;">
               <button onclick="editItem({{ i['id'] }}, '{{ i['descricao']|e }}', {{ i['categoria_id'] }}, {{ i['valor_sugerido'] or 0 }})"
-                      class="text-xs px-2 py-1 rounded bg-gray-600/50 text-gray-300 hover:bg-gray-600 transition-colors">
+                      style="font-size: 11px; padding: 3px 10px; border-radius: 5px; border: none; cursor: pointer; background: var(--bg-elevated); color: var(--text-sec); transition: background 0.15s;"
+                      onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='var(--bg-elevated)'">
                 Editar
               </button>
               <form method="POST" action="{{ url_for('config.item_toggle', iid=i['id']) }}" class="inline">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <button type="submit" class="text-xs px-2 py-1 rounded transition-colors
-                  {{ 'bg-red-500/15 text-red-400 hover:bg-red-500/25' if i['ativo'] else 'bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25' }}">
+                <button type="submit"
+                        style="font-size: 11px; padding: 3px 10px; border-radius: 5px; border: none; cursor: pointer; transition: background 0.15s;
+                               {{ 'background: rgba(240,82,82,0.1); color: var(--loss);' if i['ativo'] else 'background: rgba(34,211,160,0.12); color: var(--profit);' }}">
                   {{ 'Desativar' if i['ativo'] else 'Ativar' }}
                 </button>
               </form>
               <form method="POST" action="{{ url_for('config.item_excluir', iid=i['id']) }}" class="inline"
-                    onsubmit="return confirm('Excluir o item \'{{ i['descricao']|e }}\'? Esta ação não pode ser desfeita.')">
+                    onsubmit="return confirm('Excluir o item \'{{ i['descricao']|e }}\'?')">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <button type="submit" class="p-1 rounded text-gray-500 hover:text-red-400 hover:bg-red-500/10 transition-colors" title="Excluir">
-                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                <button type="submit" class="icon-btn-danger">
+                  <svg style="width: 13px; height: 13px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                 </button>
               </form>
             </div>
           </td>
         </tr>
         {% else %}
-        <tr><td colspan="6" class="px-4 py-8 text-center text-gray-500">Nenhum item cadastrado.</td></tr>
+        <tr><td colspan="6" style="padding: 32px; text-align: center; font-size: 13px; color: var(--text-muted);">Nenhum item cadastrado.</td></tr>
         {% endfor %}
       </tbody>
     </table>
   </div>
   {% endif %}
 
-  {# ── Produtos ───────────────────────────────────────────────────────────── #}
+  {# ── Produtos ─────────────────────────────────────────────────────────────── #}
   {% if tab == 'produtos' %}
-  <div class="bg-gray-800 border border-gray-700 rounded-xl overflow-hidden">
-    <div class="px-5 py-4 border-b border-gray-700">
-      <h3 class="text-sm font-semibold text-white">Produtos ({{ produtos|length }})</h3>
-      <p class="text-xs text-gray-500 mt-0.5">
+  <div class="card" style="overflow: hidden;">
+    <div style="padding: 14px 18px; border-bottom: 1px solid var(--border);">
+      <p style="font-size: 13px; font-weight: 600; color: var(--text-pri);">Produtos ({{ produtos|length }})</p>
+      <p style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">
         Para registrar novos produtos use a tela de
-        <a href="{{ url_for('estoque.index') }}" class="text-brand hover:text-emerald-400">Estoque</a>.
+        <a href="{{ url_for('estoque.index') }}" style="color: var(--accent); text-decoration: none;">Estoque</a>.
       </p>
     </div>
-    <table class="w-full text-sm">
+    <table class="data-table" style="width: 100%;">
       <thead>
-        <tr class="text-xs text-gray-500 uppercase tracking-wider border-b border-gray-700">
-          <th class="px-4 py-3 text-left">Nome</th>
-          <th class="px-4 py-3 text-right hidden sm:table-cell">Custo</th>
-          <th class="px-4 py-3 text-right">Venda</th>
-          <th class="px-4 py-3 text-center">Status</th>
-          <th class="px-4 py-3 text-center">Ações</th>
+        <tr>
+          <th style="text-align: left;">Nome</th>
+          <th style="text-align: right;">Custo</th>
+          <th style="text-align: right;">Venda</th>
+          <th style="text-align: center;">Status</th>
+          <th style="text-align: center;">Ações</th>
         </tr>
       </thead>
-      <tbody class="divide-y divide-gray-700/50">
+      <tbody>
         {% for p in produtos %}
-        <tr class="hover:bg-gray-700/30 transition-colors {% if not p['ativo'] %}opacity-50{% endif %}">
-          <td class="px-4 py-3">
-            <p class="text-white font-medium">{{ p['nome'] }}</p>
-            {% if p['descricao'] %}<p class="text-xs text-gray-500">{{ p['descricao'] }}</p>{% endif %}
+        <tr style="{{ 'opacity: 0.45;' if not p['ativo'] else '' }}">
+          <td>
+            <p style="font-size: 13px; font-weight: 500; color: var(--text-pri);">{{ p['nome'] }}</p>
+            {% if p['descricao'] %}<p style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">{{ p['descricao'] }}</p>{% endif %}
           </td>
-          <td class="px-4 py-3 text-right text-gray-400 text-xs hidden sm:table-cell">R$ {{ "%.2f"|format(p['preco_custo'] / 100) }}</td>
-          <td class="px-4 py-3 text-right text-emerald-400">R$ {{ "%.2f"|format(p['preco_venda'] / 100) }}</td>
-          <td class="px-4 py-3 text-center">
-            <span class="text-xs px-2 py-0.5 rounded-full
-              {{ 'bg-emerald-500/15 text-emerald-400' if p['ativo'] else 'bg-gray-500/15 text-gray-500' }}">
+          <td style="text-align: right; font-size: 12px; color: var(--text-muted); font-family: 'IBM Plex Mono', monospace;">R$&nbsp;{{ "%.2f"|format(p['preco_custo'] / 100) }}</td>
+          <td style="text-align: right;">
+            <span class="kpi-value" style="font-size: 13px; color: var(--profit);">R$&nbsp;{{ "%.2f"|format(p['preco_venda'] / 100) }}</span>
+          </td>
+          <td style="text-align: center;">
+            <span style="font-size: 11px; padding: 2px 8px; border-radius: 99px; {{ 'background: rgba(34,211,160,0.12); color: var(--profit);' if p['ativo'] else 'background: var(--bg-elevated); color: var(--text-muted);' }}">
               {{ 'Ativo' if p['ativo'] else 'Inativo' }}
             </span>
           </td>
-          <td class="px-4 py-3 text-center">
-            <div class="flex items-center justify-center gap-1.5">
+          <td style="text-align: center;">
+            <div style="display: flex; align-items: center; justify-content: center; gap: 6px;">
               <button onclick="editProduto({{ p['id'] }}, '{{ p['nome']|e }}', '{{ (p['descricao'] or '')|e }}', {{ p['preco_custo'] }}, {{ p['preco_venda'] }})"
-                      class="text-xs px-2 py-1 rounded bg-gray-600/50 text-gray-300 hover:bg-gray-600 transition-colors">
+                      style="font-size: 11px; padding: 3px 10px; border-radius: 5px; border: none; cursor: pointer; background: var(--bg-elevated); color: var(--text-sec); transition: background 0.15s;"
+                      onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='var(--bg-elevated)'">
                 Editar
               </button>
               <form method="POST" action="{{ url_for('config.produto_toggle', pid=p['id']) }}" class="inline">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <button type="submit" class="text-xs px-2 py-1 rounded transition-colors
-                  {{ 'bg-red-500/15 text-red-400 hover:bg-red-500/25' if p['ativo'] else 'bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25' }}">
+                <button type="submit"
+                        style="font-size: 11px; padding: 3px 10px; border-radius: 5px; border: none; cursor: pointer; transition: background 0.15s;
+                               {{ 'background: rgba(240,82,82,0.1); color: var(--loss);' if p['ativo'] else 'background: rgba(34,211,160,0.12); color: var(--profit);' }}">
                   {{ 'Desativar' if p['ativo'] else 'Ativar' }}
                 </button>
               </form>
               <form method="POST" action="{{ url_for('config.produto_excluir', pid=p['id']) }}" class="inline"
-                    onsubmit="return confirm('Excluir o produto \'{{ p['nome']|e }}\'? Esta ação não pode ser desfeita.')">
+                    onsubmit="return confirm('Excluir o produto \'{{ p['nome']|e }}\'?')">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <button type="submit" class="p-1 rounded text-gray-500 hover:text-red-400 hover:bg-red-500/10 transition-colors" title="Excluir">
-                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                <button type="submit" class="icon-btn-danger">
+                  <svg style="width: 13px; height: 13px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                 </button>
               </form>
             </div>
           </td>
         </tr>
         {% else %}
-        <tr><td colspan="5" class="px-4 py-8 text-center text-gray-500">Nenhum produto cadastrado.</td></tr>
+        <tr><td colspan="5" style="padding: 32px; text-align: center; font-size: 13px; color: var(--text-muted);">Nenhum produto cadastrado.</td></tr>
         {% endfor %}
       </tbody>
     </table>
   </div>
   {% endif %}
 
-  {# ── Conta ──────────────────────────────────────────────────────────────── #}
+  {# ── Conta ────────────────────────────────────────────────────────────────── #}
   {% if tab == 'conta' %}
   <div class="grid lg:grid-cols-2 gap-6">
 
-    <div class="bg-gray-800 border border-gray-700 rounded-xl p-6">
-      <h3 class="text-sm font-semibold text-white mb-5">Dados da conta</h3>
-      <form method="POST" action="{{ url_for('config.conta_update') }}" class="space-y-4">
+    <div class="card" style="padding: 24px; display: flex; flex-direction: column; gap: 14px;">
+      <p style="font-size: 13px; font-weight: 600; color: var(--text-pri);">Dados da conta</p>
+      <form method="POST" action="{{ url_for('config.conta_update') }}" style="display: flex; flex-direction: column; gap: 14px;">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <div>
-          <label class="block text-xs font-medium text-gray-400 mb-1.5">Nome</label>
-          <input type="text" name="nome" value="{{ current_user.nome }}" required
-                 class="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2.5 text-white text-sm focus:ring-2 focus:ring-brand focus:outline-none">
+          <label style="display: block; font-size: 11px; font-weight: 500; color: var(--text-muted); margin-bottom: 6px;">Nome</label>
+          <input type="text" name="nome" value="{{ current_user.nome }}" required>
         </div>
         <div>
-          <label class="block text-xs font-medium text-gray-400 mb-1.5">E-mail</label>
-          <input type="email" name="email" value="{{ current_user.email }}" required
-                 class="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2.5 text-white text-sm focus:ring-2 focus:ring-brand focus:outline-none">
+          <label style="display: block; font-size: 11px; font-weight: 500; color: var(--text-muted); margin-bottom: 6px;">E-mail</label>
+          <input type="email" name="email" value="{{ current_user.email }}" required>
         </div>
-        <p class="text-xs text-gray-500">
+        <p style="font-size: 12px; color: var(--text-muted);">
           Plano:
-          <span class="{{ 'text-brand font-semibold' if current_user.is_pro else 'text-gray-400' }}">
+          <span style="{{ 'color: var(--accent); font-weight: 600;' if current_user.is_pro else 'color: var(--text-muted);' }}">
             {{ 'Pro' if current_user.is_pro else 'Grátis' }}
           </span>
         </p>
-        <button type="submit"
-                class="w-full py-2.5 text-sm font-semibold rounded-lg bg-brand hover:bg-emerald-600 text-white transition-colors">
-          Salvar alterações
-        </button>
+        <button type="submit" class="btn-accent" style="justify-content: center;">Salvar alterações</button>
       </form>
     </div>
 
-    <div class="bg-gray-800 border border-gray-700 rounded-xl p-6">
-      <h3 class="text-sm font-semibold text-white mb-5">Alterar senha</h3>
-      <form method="POST" action="{{ url_for('config.conta_senha') }}" class="space-y-4">
+    <div class="card" style="padding: 24px;">
+      <p style="font-size: 13px; font-weight: 600; color: var(--text-pri); margin-bottom: 16px;">Alterar senha</p>
+      <form method="POST" action="{{ url_for('config.conta_senha') }}" style="display: flex; flex-direction: column; gap: 14px;">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <div>
-          <label class="block text-xs font-medium text-gray-400 mb-1.5">Senha atual</label>
-          <input type="password" name="senha_atual" required autocomplete="current-password"
-                 class="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2.5 text-white text-sm focus:ring-2 focus:ring-brand focus:outline-none">
+          <label style="display: block; font-size: 11px; font-weight: 500; color: var(--text-muted); margin-bottom: 6px;">Senha atual</label>
+          <input type="password" name="senha_atual" required autocomplete="current-password">
         </div>
         <div>
-          <label class="block text-xs font-medium text-gray-400 mb-1.5">Nova senha</label>
-          <input type="password" name="nova_senha" required autocomplete="new-password" minlength="6"
-                 class="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2.5 text-white text-sm focus:ring-2 focus:ring-brand focus:outline-none">
+          <label style="display: block; font-size: 11px; font-weight: 500; color: var(--text-muted); margin-bottom: 6px;">Nova senha</label>
+          <input type="password" name="nova_senha" required autocomplete="new-password" minlength="6">
         </div>
         <div>
-          <label class="block text-xs font-medium text-gray-400 mb-1.5">Confirmar nova senha</label>
-          <input type="password" name="confirmar_senha" required autocomplete="new-password"
-                 class="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2.5 text-white text-sm focus:ring-2 focus:ring-brand focus:outline-none">
+          <label style="display: block; font-size: 11px; font-weight: 500; color: var(--text-muted); margin-bottom: 6px;">Confirmar nova senha</label>
+          <input type="password" name="confirmar_senha" required autocomplete="new-password">
         </div>
-        <button type="submit"
-                class="w-full py-2.5 text-sm font-semibold rounded-lg bg-gray-700 hover:bg-gray-600 text-white transition-colors">
-          Alterar senha
-        </button>
+        <button type="submit" class="btn-ghost" style="justify-content: center; color: var(--text-pri);">Alterar senha</button>
       </form>
     </div>
 
   </div>
 
   <!-- Zona de perigo -->
-  <div class="mt-6 bg-gray-800 border border-red-500/30 rounded-xl p-6">
-    <h3 class="text-sm font-semibold text-red-400 mb-1">Zona de perigo</h3>
-    <p class="text-xs text-gray-500 mb-5">
+  <div style="margin-top: 20px; background: var(--bg-surface); border: 1px solid rgba(240,82,82,0.25); border-radius: 10px; padding: 24px;">
+    <p style="font-size: 13px; font-weight: 600; color: var(--loss); margin-bottom: 6px;">Zona de perigo</p>
+    <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 16px;">
       Apaga todos os seus dados (serviços, receitas, despesas, estoque) e restaura o catálogo inicial.
-      Esta ação é <strong class="text-gray-300">irreversível</strong>.
+      Esta ação é <strong style="color: var(--text-sec);">irreversível</strong>.
     </p>
-    <form method="POST" action="{{ url_for('config.reset_conta') }}" class="space-y-3"
+    <form method="POST" action="{{ url_for('config.reset_conta') }}" style="display: flex; flex-direction: column; gap: 10px;"
           onsubmit="return document.getElementById('input-confirmar').value === 'CONFIRMAR' || (alert('Digite CONFIRMAR para prosseguir.'), false)">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <div>
-        <label class="block text-xs font-medium text-gray-400 mb-1.5">
-          Digite <span class="text-red-400 font-mono">CONFIRMAR</span> para habilitar o botão
+        <label style="display: block; font-size: 11px; font-weight: 500; color: var(--text-muted); margin-bottom: 6px;">
+          Digite <span style="color: var(--loss); font-family: 'IBM Plex Mono', monospace;">CONFIRMAR</span> para habilitar
         </label>
-        <input type="text" id="input-confirmar" name="confirmacao" autocomplete="off"
-               placeholder="CONFIRMAR"
+        <input type="text" id="input-confirmar" name="confirmacao" autocomplete="off" placeholder="CONFIRMAR"
                oninput="document.getElementById('btn-reset').disabled = this.value !== 'CONFIRMAR'"
-               class="w-full bg-gray-900 border border-red-500/30 rounded-lg px-3 py-2.5 text-white text-sm focus:ring-2 focus:ring-red-500 focus:outline-none">
+               style="border-color: rgba(240,82,82,0.25);">
       </div>
-      <button type="submit" id="btn-reset" disabled
-              class="px-5 py-2.5 text-sm font-semibold rounded-lg bg-red-600/80 hover:bg-red-600 text-white transition-colors
-                     disabled:opacity-40 disabled:cursor-not-allowed">
-        Resetar minha conta
-      </button>
+      <div>
+        <button type="submit" id="btn-reset" disabled
+                style="font-size: 13px; font-weight: 600; padding: 8px 20px; border-radius: 8px; border: none; cursor: pointer;
+                       background: rgba(240,82,82,0.8); color: #fff; transition: background 0.15s;
+                       opacity: 0.4; cursor: not-allowed;"
+                onmouseover="if(!this.disabled)this.style.background='var(--loss)'" onmouseout="if(!this.disabled)this.style.background='rgba(240,82,82,0.8)'">
+          Resetar minha conta
+        </button>
+      </div>
     </form>
   </div>
   {% endif %}
 
 </div>
 
-{# ── Modais ─────────────────────────────────────────────────────────────────── #}
+{# ── Modais ───────────────────────────────────────────────────────────────────── #}
 
 <!-- Modal Serviço -->
-<div id="modal-servico" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60">
-  <div class="bg-gray-800 border border-gray-700 rounded-2xl p-6 w-full max-w-md">
-    <h3 class="text-base font-semibold text-white mb-5" id="srv-titulo">Novo Serviço</h3>
-    <form method="POST" id="form-servico" class="space-y-4">
+<div id="modal-servico" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4" style="background: rgba(0,0,0,0.7);">
+  <div class="card" style="padding: 24px; width: 100%; max-width: 440px;">
+    <h3 style="font-size: 15px; font-weight: 600; color: var(--text-pri); margin-bottom: 20px;" id="srv-titulo">Novo Serviço</h3>
+    <form method="POST" id="form-servico" style="display: flex; flex-direction: column; gap: 14px;">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <div>
-        <label class="block text-xs font-medium text-gray-400 mb-1.5">Nome</label>
-        <input type="text" name="nome" id="srv-nome" required minlength="2"
-               class="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2.5 text-white text-sm focus:ring-2 focus:ring-brand focus:outline-none">
+        <label style="display: block; font-size: 11px; font-weight: 500; color: var(--text-muted); margin-bottom: 6px;">Nome</label>
+        <input type="text" name="nome" id="srv-nome" required minlength="2">
       </div>
       <div class="grid grid-cols-2 gap-3">
         <div>
-          <label class="block text-xs font-medium text-gray-400 mb-1.5">Preço (R$)</label>
-          <input type="number" name="preco_padrao" id="srv-preco" step="0.01" min="0" required
-                 class="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2.5 text-white text-sm focus:ring-2 focus:ring-brand focus:outline-none">
+          <label style="display: block; font-size: 11px; font-weight: 500; color: var(--text-muted); margin-bottom: 6px;">Preço (R$)</label>
+          <input type="number" name="preco_padrao" id="srv-preco" step="0.01" min="0" required>
         </div>
         <div>
-          <label class="block text-xs font-medium text-gray-400 mb-1.5">Ordem</label>
-          <input type="number" name="ordem" id="srv-ordem" min="0" value="999"
-                 class="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2.5 text-white text-sm focus:ring-2 focus:ring-brand focus:outline-none">
+          <label style="display: block; font-size: 11px; font-weight: 500; color: var(--text-muted); margin-bottom: 6px;">Ordem</label>
+          <input type="number" name="ordem" id="srv-ordem" min="0" value="999">
         </div>
       </div>
       <div>
-        <label class="block text-xs font-medium text-gray-400 mb-1.5">Categoria (opcional)</label>
-        <input type="text" name="categoria_servico" id="srv-cat" placeholder="ex: Corte, Barba…"
-               class="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2.5 text-white text-sm focus:ring-2 focus:ring-brand focus:outline-none">
+        <label style="display: block; font-size: 11px; font-weight: 500; color: var(--text-muted); margin-bottom: 6px;">Categoria (opcional)</label>
+        <input type="text" name="categoria_servico" id="srv-cat" placeholder="ex: Corte, Barba…">
       </div>
-      <div class="flex gap-3 pt-2">
-        <button type="button" onclick="closeModal('modal-servico')"
-                class="flex-1 py-2.5 text-sm font-medium rounded-lg border border-gray-600 text-gray-400 hover:text-white transition-colors">
-          Cancelar
-        </button>
-        <button type="submit"
-                class="flex-1 py-2.5 text-sm font-semibold rounded-lg bg-brand hover:bg-emerald-600 text-white transition-colors">
-          Salvar
-        </button>
+      <div style="display: flex; gap: 10px; padding-top: 6px;">
+        <button type="button" onclick="closeModal('modal-servico')" class="btn-ghost" style="flex: 1;">Cancelar</button>
+        <button type="submit" class="btn-accent" style="flex: 1; justify-content: center;">Salvar</button>
       </div>
     </form>
   </div>
 </div>
 
 <!-- Modal Categoria -->
-<div id="modal-categoria" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60">
-  <div class="bg-gray-800 border border-gray-700 rounded-2xl p-6 w-full max-w-sm">
-    <h3 class="text-base font-semibold text-white mb-5" id="cat-titulo">Nova Categoria</h3>
-    <form method="POST" id="form-cat" class="space-y-4">
+<div id="modal-categoria" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4" style="background: rgba(0,0,0,0.7);">
+  <div class="card" style="padding: 24px; width: 100%; max-width: 360px;">
+    <h3 style="font-size: 15px; font-weight: 600; color: var(--text-pri); margin-bottom: 20px;" id="cat-titulo">Nova Categoria</h3>
+    <form method="POST" id="form-cat" style="display: flex; flex-direction: column; gap: 14px;">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <div>
-        <label class="block text-xs font-medium text-gray-400 mb-1.5">Nome</label>
-        <input type="text" name="nome" id="cat-nome" required minlength="2"
-               class="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2.5 text-white text-sm focus:ring-2 focus:ring-brand focus:outline-none">
+        <label style="display: block; font-size: 11px; font-weight: 500; color: var(--text-muted); margin-bottom: 6px;">Nome</label>
+        <input type="text" name="nome" id="cat-nome" required minlength="2">
       </div>
       <div>
-        <label class="block text-xs font-medium text-gray-400 mb-1.5">Ícone (emoji)</label>
-        <input type="text" name="icone" id="cat-icone" placeholder="📦"
-               class="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2.5 text-white text-sm focus:ring-2 focus:ring-brand focus:outline-none">
+        <label style="display: block; font-size: 11px; font-weight: 500; color: var(--text-muted); margin-bottom: 6px;">Ícone (emoji)</label>
+        <input type="text" name="icone" id="cat-icone" placeholder="📦">
       </div>
-      <div class="flex gap-3 pt-2">
-        <button type="button" onclick="closeModal('modal-categoria')"
-                class="flex-1 py-2.5 text-sm font-medium rounded-lg border border-gray-600 text-gray-400 hover:text-white transition-colors">
-          Cancelar
-        </button>
-        <button type="submit"
-                class="flex-1 py-2.5 text-sm font-semibold rounded-lg bg-brand hover:bg-emerald-600 text-white transition-colors">
-          Salvar
-        </button>
+      <div style="display: flex; gap: 10px; padding-top: 6px;">
+        <button type="button" onclick="closeModal('modal-categoria')" class="btn-ghost" style="flex: 1;">Cancelar</button>
+        <button type="submit" class="btn-accent" style="flex: 1; justify-content: center;">Salvar</button>
       </div>
     </form>
   </div>
 </div>
 
 <!-- Modal Item -->
-<div id="modal-item" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60">
-  <div class="bg-gray-800 border border-gray-700 rounded-2xl p-6 w-full max-w-md">
-    <h3 class="text-base font-semibold text-white mb-5" id="item-titulo">Novo Item</h3>
-    <form method="POST" id="form-item" class="space-y-4">
+<div id="modal-item" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4" style="background: rgba(0,0,0,0.7);">
+  <div class="card" style="padding: 24px; width: 100%; max-width: 440px;">
+    <h3 style="font-size: 15px; font-weight: 600; color: var(--text-pri); margin-bottom: 20px;" id="item-titulo">Novo Item</h3>
+    <form method="POST" id="form-item" style="display: flex; flex-direction: column; gap: 14px;">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <div>
-        <label class="block text-xs font-medium text-gray-400 mb-1.5">Descrição</label>
-        <input type="text" name="descricao" id="item-descricao" required minlength="2"
-               class="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2.5 text-white text-sm focus:ring-2 focus:ring-brand focus:outline-none">
+        <label style="display: block; font-size: 11px; font-weight: 500; color: var(--text-muted); margin-bottom: 6px;">Descrição</label>
+        <input type="text" name="descricao" id="item-descricao" required minlength="2">
       </div>
       <div class="grid grid-cols-2 gap-3">
         <div>
-          <label class="block text-xs font-medium text-gray-400 mb-1.5">Categoria</label>
-          <select name="categoria_id" id="item-cat"
-                  class="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2.5 text-white text-sm focus:ring-2 focus:ring-brand focus:outline-none">
+          <label style="display: block; font-size: 11px; font-weight: 500; color: var(--text-muted); margin-bottom: 6px;">Categoria</label>
+          <select name="categoria_id" id="item-cat">
             {% for c in categorias %}
             <option value="{{ c['id'] }}">{{ c['icone'] }} {{ c['nome'] }}</option>
             {% endfor %}
           </select>
         </div>
         <div>
-          <label class="block text-xs font-medium text-gray-400 mb-1.5">Valor sugerido (R$)</label>
-          <input type="number" name="valor_sugerido" id="item-valor" step="0.01" min="0"
-                 class="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2.5 text-white text-sm focus:ring-2 focus:ring-brand focus:outline-none">
+          <label style="display: block; font-size: 11px; font-weight: 500; color: var(--text-muted); margin-bottom: 6px;">Valor sugerido (R$)</label>
+          <input type="number" name="valor_sugerido" id="item-valor" step="0.01" min="0">
         </div>
       </div>
-      <div class="flex gap-3 pt-2">
-        <button type="button" onclick="closeModal('modal-item')"
-                class="flex-1 py-2.5 text-sm font-medium rounded-lg border border-gray-600 text-gray-400 hover:text-white transition-colors">
-          Cancelar
-        </button>
-        <button type="submit"
-                class="flex-1 py-2.5 text-sm font-semibold rounded-lg bg-brand hover:bg-emerald-600 text-white transition-colors">
-          Salvar
-        </button>
+      <div style="display: flex; gap: 10px; padding-top: 6px;">
+        <button type="button" onclick="closeModal('modal-item')" class="btn-ghost" style="flex: 1;">Cancelar</button>
+        <button type="submit" class="btn-accent" style="flex: 1; justify-content: center;">Salvar</button>
       </div>
     </form>
   </div>
 </div>
 
 <!-- Modal Produto (apenas edição) -->
-<div id="modal-produto" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60">
-  <div class="bg-gray-800 border border-gray-700 rounded-2xl p-6 w-full max-w-md">
-    <h3 class="text-base font-semibold text-white mb-5">Editar Produto</h3>
-    <form method="POST" id="form-produto" class="space-y-4">
+<div id="modal-produto" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4" style="background: rgba(0,0,0,0.7);">
+  <div class="card" style="padding: 24px; width: 100%; max-width: 440px;">
+    <h3 style="font-size: 15px; font-weight: 600; color: var(--text-pri); margin-bottom: 20px;">Editar Produto</h3>
+    <form method="POST" id="form-produto" style="display: flex; flex-direction: column; gap: 14px;">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <div>
-        <label class="block text-xs font-medium text-gray-400 mb-1.5">Nome</label>
-        <input type="text" name="nome" id="prod-nome" required minlength="2"
-               class="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2.5 text-white text-sm focus:ring-2 focus:ring-brand focus:outline-none">
+        <label style="display: block; font-size: 11px; font-weight: 500; color: var(--text-muted); margin-bottom: 6px;">Nome</label>
+        <input type="text" name="nome" id="prod-nome" required minlength="2">
       </div>
       <div>
-        <label class="block text-xs font-medium text-gray-400 mb-1.5">Descrição (opcional)</label>
-        <input type="text" name="descricao" id="prod-desc"
-               class="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2.5 text-white text-sm focus:ring-2 focus:ring-brand focus:outline-none">
+        <label style="display: block; font-size: 11px; font-weight: 500; color: var(--text-muted); margin-bottom: 6px;">Descrição (opcional)</label>
+        <input type="text" name="descricao" id="prod-desc">
       </div>
       <div class="grid grid-cols-2 gap-3">
         <div>
-          <label class="block text-xs font-medium text-gray-400 mb-1.5">Custo (R$)</label>
-          <input type="number" name="preco_custo" id="prod-custo" step="0.01" min="0" required
-                 class="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2.5 text-white text-sm focus:ring-2 focus:ring-brand focus:outline-none">
+          <label style="display: block; font-size: 11px; font-weight: 500; color: var(--text-muted); margin-bottom: 6px;">Custo (R$)</label>
+          <input type="number" name="preco_custo" id="prod-custo" step="0.01" min="0" required>
         </div>
         <div>
-          <label class="block text-xs font-medium text-gray-400 mb-1.5">Venda (R$)</label>
-          <input type="number" name="preco_venda" id="prod-venda" step="0.01" min="0" required
-                 class="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2.5 text-white text-sm focus:ring-2 focus:ring-brand focus:outline-none">
+          <label style="display: block; font-size: 11px; font-weight: 500; color: var(--text-muted); margin-bottom: 6px;">Venda (R$)</label>
+          <input type="number" name="preco_venda" id="prod-venda" step="0.01" min="0" required>
         </div>
       </div>
-      <div class="flex gap-3 pt-2">
-        <button type="button" onclick="closeModal('modal-produto')"
-                class="flex-1 py-2.5 text-sm font-medium rounded-lg border border-gray-600 text-gray-400 hover:text-white transition-colors">
-          Cancelar
-        </button>
-        <button type="submit"
-                class="flex-1 py-2.5 text-sm font-semibold rounded-lg bg-brand hover:bg-emerald-600 text-white transition-colors">
-          Salvar
-        </button>
+      <div style="display: flex; gap: 10px; padding-top: 6px;">
+        <button type="button" onclick="closeModal('modal-produto')" class="btn-ghost" style="flex: 1;">Cancelar</button>
+        <button type="submit" class="btn-accent" style="flex: 1; justify-content: center;">Salvar</button>
       </div>
     </form>
   </div>
@@ -726,5 +661,11 @@ function editProduto(id, nome, desc, custo, venda) {
   document.getElementById('prod-venda').value = (venda / 100).toFixed(2);
   openModal('modal-produto');
 }
+
+// Habilitar botão reset quando disabled está programático
+document.getElementById('btn-reset')?.addEventListener('click', function() {
+  this.style.opacity = '1';
+  this.style.cursor = 'pointer';
+});
 </script>
 {% endblock %}

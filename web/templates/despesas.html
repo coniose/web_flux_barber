@@ -1,53 +1,54 @@
 {% extends "base.html" %}
-{% block title %}Despesas — Flux Barber{% endblock %}
+{% block title %}Despesas — Flux{% endblock %}
 
 {% block content %}
-<div class="max-w-6xl mx-auto space-y-6">
+<div style="max-width: 1100px; margin: 0 auto;">
 
-  <div class="flex items-center justify-between flex-wrap gap-3">
+  <!-- Header -->
+  <div style="display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 32px;">
     <div>
-      <h1 class="text-xl font-bold text-white">Despesas</h1>
-      <p class="text-sm text-gray-400 mt-0.5">{{ qtd }} lançamento(s) · R$ {{ "%.2f"|format(total / 100) }}</p>
+      <h1 style="font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 700; color: var(--text-pri); letter-spacing: -0.025em; line-height: 1.1; margin: 0;">
+        Despesas
+      </h1>
+      <p style="font-size: 12px; color: var(--text-muted); margin-top: 5px; font-family: 'IBM Plex Mono', monospace;">
+        {{ qtd }} lançamento(s) · <span style="color: var(--loss);">R$ {{ "%.2f"|format(total / 100) }}</span>
+      </p>
     </div>
-    <a href="{{ url_for('lancamento.index') }}?tab=despesa"
-       class="flex items-center gap-2 bg-brand hover:bg-emerald-600 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors">
-      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+    <a href="{{ url_for('lancamento.index') }}?tab=despesa" class="btn-accent">
+      <svg style="width: 13px; height: 13px; flex-shrink: 0;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/>
+      </svg>
       Nova
     </a>
   </div>
 
-  <!-- Filtro de período -->
-  <form method="GET" class="flex items-end gap-3 bg-gray-800 border border-gray-700 rounded-xl p-4">
-    <div>
-      <label class="block text-xs text-gray-400 mb-1">De</label>
-      <input type="date" name="de" value="{{ de }}"
-             class="bg-gray-900 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm focus:ring-2 focus:ring-brand focus:outline-none">
-    </div>
-    <div>
-      <label class="block text-xs text-gray-400 mb-1">Até</label>
-      <input type="date" name="ate" value="{{ ate }}"
-             class="bg-gray-900 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm focus:ring-2 focus:ring-brand focus:outline-none">
-    </div>
-    <button type="submit"
-            class="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white text-sm font-medium rounded-lg transition-colors">
-      Filtrar
-    </button>
-  </form>
+  <!-- Filtro -->
+  <div class="card" style="padding: 16px 20px; margin-bottom: 20px;">
+    <form method="GET" style="display: flex; align-items: flex-end; gap: 12px; flex-wrap: wrap;">
+      <div>
+        <label style="display: block; font-size: 10px; font-family: 'IBM Plex Mono', monospace; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px;">De</label>
+        <input type="date" name="de" value="{{ de }}">
+      </div>
+      <div>
+        <label style="display: block; font-size: 10px; font-family: 'IBM Plex Mono', monospace; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px;">Até</label>
+        <input type="date" name="ate" value="{{ ate }}">
+      </div>
+      <button type="submit" class="btn-accent" style="padding: 6px 14px; font-size: 12px;">Filtrar</button>
+    </form>
+  </div>
 
   <div class="grid lg:grid-cols-4 gap-4">
 
     <!-- Por categoria (sidebar) -->
     {% if por_categoria %}
     <div class="lg:col-span-1">
-      <div class="bg-gray-800 border border-gray-700 rounded-xl p-4">
-        <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Por categoria</h3>
-        <div class="space-y-2">
+      <div class="card" style="padding: 16px 18px;">
+        <p class="section-label" style="margin-bottom: 12px;">Por categoria</p>
+        <div style="display: flex; flex-direction: column; gap: 8px;">
           {% for c in por_categoria %}
-          <div class="flex items-center justify-between">
-            <p class="text-xs text-gray-300 truncate">{{ c['categoria_nome'] }}</p>
-            <p class="text-xs font-medium text-red-400 whitespace-nowrap ml-2">
-              R$ {{ "%.2f"|format(c['total'] / 100) }}
-            </p>
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+            <p style="font-size: 12px; color: var(--text-sec); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ c['categoria_nome'] }}</p>
+            <span class="kpi-value" style="font-size: 12px; color: var(--loss); white-space: nowrap; flex-shrink: 0;">R$&nbsp;{{ "%.2f"|format(c['total'] / 100) }}</span>
           </div>
           {% endfor %}
         </div>
@@ -56,59 +57,66 @@
     {% endif %}
 
     <!-- Tabela -->
-    <div class="lg:col-span-3 bg-gray-800 border border-gray-700 rounded-xl overflow-hidden">
-      {% if despesas %}
-      <table class="w-full text-sm">
-        <thead>
-          <tr class="border-b border-gray-700 text-xs text-gray-500 uppercase tracking-wider">
-            <th class="px-4 py-3 text-left">Data</th>
-            <th class="px-4 py-3 text-left">Descrição</th>
-            <th class="px-4 py-3 text-left">Categoria</th>
-            <th class="px-4 py-3 text-left">Forma</th>
-            <th class="px-4 py-3 text-right">Valor</th>
-            <th class="px-4 py-3"></th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-gray-700/50">
-          {% for d in despesas %}
-          <tr class="hover:bg-gray-700/30 transition-colors">
-            <td class="px-4 py-3 text-gray-300 whitespace-nowrap">
-              {{ d['data'][8:10] }}/{{ d['data'][5:7] }}
-            </td>
-            <td class="px-4 py-3 text-white">{{ d['descricao'] }}</td>
-            <td class="px-4 py-3 text-gray-400 text-xs">{{ d['categoria_nome'] }}</td>
-            <td class="px-4 py-3">
-              <span class="text-xs px-2 py-0.5 rounded-full
-                {% if d['forma_pagamento'] == 'PIX' %}bg-blue-500/15 text-blue-400
-                {% elif d['forma_pagamento'] == 'DINHEIRO' %}bg-emerald-500/15 text-emerald-400
-                {% else %}bg-purple-500/15 text-purple-400{% endif %}">
-                {{ d['forma_pagamento'] }}
-              </span>
-            </td>
-            <td class="px-4 py-3 text-right font-semibold text-red-400">
-              R$ {{ "%.2f"|format(d['valor'] / 100) }}
-            </td>
-            <td class="px-4 py-3 text-right">
-              <form method="POST" action="{{ url_for('despesas.excluir', despesa_id=d['id']) }}"
-                    onsubmit="return confirm('Excluir esta despesa?')">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <button type="submit" class="text-gray-600 hover:text-red-400 transition-colors p-1">
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                </button>
-              </form>
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-      {% else %}
-      <div class="py-16 text-center text-gray-500">
-        <svg class="w-12 h-12 mx-auto mb-3 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
-        <p>Nenhuma despesa no período selecionado.</p>
+    <div class="{{ 'lg:col-span-3' if por_categoria else 'lg:col-span-4' }}">
+      <div class="card" style="overflow: hidden;">
+        {% if despesas %}
+        <table class="data-table" style="width: 100%;">
+          <thead>
+            <tr>
+              <th style="text-align: left;">Data</th>
+              <th style="text-align: left;">Descrição</th>
+              <th style="text-align: left;">Categoria</th>
+              <th style="text-align: left;">Forma</th>
+              <th style="text-align: right;">Valor</th>
+              <th style="width: 40px;"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for d in despesas %}
+            <tr>
+              <td style="white-space: nowrap; font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--text-sec);">
+                {{ d['data'][8:10] }}/{{ d['data'][5:7] }}
+              </td>
+              <td style="color: var(--text-pri); font-size: 13px;">{{ d['descricao'] }}</td>
+              <td style="font-size: 11px; color: var(--text-muted);">{{ d['categoria_nome'] }}</td>
+              <td>
+                {% if d['forma_pagamento'] == 'PIX' %}
+                <span style="font-size: 11px; padding: 2px 8px; border-radius: 99px; background: rgba(59,130,246,0.12); color: #60a5fa; font-family: 'IBM Plex Mono', monospace;">PIX</span>
+                {% elif d['forma_pagamento'] == 'DINHEIRO' %}
+                <span style="font-size: 11px; padding: 2px 8px; border-radius: 99px; background: rgba(34,211,160,0.12); color: var(--profit); font-family: 'IBM Plex Mono', monospace;">DINHEIRO</span>
+                {% else %}
+                <span style="font-size: 11px; padding: 2px 8px; border-radius: 99px; background: rgba(167,139,250,0.12); color: #a78bfa; font-family: 'IBM Plex Mono', monospace;">{{ d['forma_pagamento'] }}</span>
+                {% endif %}
+              </td>
+              <td style="text-align: right;">
+                <span class="kpi-value" style="font-size: 13px; color: var(--loss);">R$&nbsp;{{ "%.2f"|format(d['valor'] / 100) }}</span>
+              </td>
+              <td style="text-align: right; padding-right: 12px;">
+                <form method="POST" action="{{ url_for('despesas.excluir', despesa_id=d['id']) }}"
+                      onsubmit="return confirm('Excluir esta despesa?')">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <button type="submit" class="icon-btn-danger">
+                    <svg style="width: 14px; height: 14px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                    </svg>
+                  </button>
+                </form>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <div style="padding: 64px 0; text-align: center;">
+          <svg style="width: 40px; height: 40px; color: var(--text-muted); opacity: 0.3; margin: 0 auto 12px; display: block;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/>
+          </svg>
+          <p style="font-size: 13px; color: var(--text-muted);">Nenhuma despesa no período selecionado.</p>
+        </div>
+        {% endif %}
       </div>
-      {% endif %}
     </div>
-  </div>
 
+  </div>
 </div>
 {% endblock %}

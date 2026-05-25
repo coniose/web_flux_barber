@@ -82,7 +82,7 @@ class User(UserMixin):
         device_id = uuid.uuid4().hex
         conn = get_connection()
         conn.execute(
-            "INSERT INTO usuario (nome, email, google_id, device_id, auth_provider) VALUES (?, ?, ?, ?, 'google')",
+            "INSERT INTO usuario (nome, email, senha_hash, google_id, device_id, auth_provider) VALUES (?, ?, '', ?, ?, 'google')",
             (nome.strip(), email.lower().strip(), google_id, device_id),
         )
         row = conn.execute(

@@ -1,16 +1,29 @@
 {% extends "base.html" %}
-{% block title %}Lançar — Flux Barber{% endblock %}
+{% block title %}Lançar — Flux{% endblock %}
 
-{% block content %}
+{% block head %}
 <style>
-  .servico-selecionado {
-    background: #1a2e25;
-    border-color: #10b981;
-    box-shadow: 0 0 0 1px rgba(16,185,129,.2);
+  .forma-btn, .desp-forma-btn {
+    flex: 1;
+    padding: 8px 10px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text-sec);
+    font-size: 12px;
+    font-weight: 500;
+    font-family: 'IBM Plex Mono', monospace;
+    cursor: pointer;
+    transition: all 0.12s;
+    letter-spacing: 0.03em;
+    text-align: center;
   }
-  .servico-selecionado .nome-servico,
-  .servico-selecionado .nome-produto,
-  .servico-selecionado .nome-item { color: #10b981; }
+  .forma-btn:hover, .desp-forma-btn:hover { border-color: #2e2e50; color: var(--text-pri); }
+  .forma-btn.selected, .desp-forma-btn.selected {
+    border-color: var(--accent);
+    background: var(--accent-dim);
+    color: var(--accent);
+  }
 
   @keyframes slideIn {
     from { opacity: 0; transform: translateY(6px); }
@@ -18,32 +31,26 @@
   }
   #confirm-panel:not(.hidden),
   #confirm-produto:not(.hidden) {
-    animation: slideIn .2s ease;
+    animation: slideIn .18s ease;
   }
 </style>
-<div class="max-w-5xl mx-auto space-y-6">
+{% endblock %}
 
-  <div class="flex items-center justify-between">
-    <h1 class="text-xl font-bold text-white">Lançamento rápido</h1>
+{% block content %}
+<div style="max-width: 860px; margin: 0 auto;">
+
+  <div style="margin-bottom: 24px;">
+    <h1 style="font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 700; color: var(--text-pri); letter-spacing: -0.025em; margin: 0;">Lançamento rápido</h1>
   </div>
 
   <!-- Tabs -->
-  <div class="flex gap-1 bg-gray-800 rounded-xl p-1 w-fit border border-gray-700">
-    <button onclick="showTab('atendimento')" id="tab-atendimento"
-            class="tab-btn px-5 py-2 text-sm font-medium rounded-lg transition-colors text-white bg-gray-700">
-      Atendimento
-    </button>
-    <button onclick="showTab('despesa')" id="tab-despesa"
-            class="tab-btn px-5 py-2 text-sm font-medium rounded-lg transition-colors text-gray-400 hover:text-white">
-      Despesa
-    </button>
-    <button onclick="showTab('produto')" id="tab-produto"
-            class="tab-btn px-5 py-2 text-sm font-medium rounded-lg transition-colors text-gray-400 hover:text-white">
-      Produto
-    </button>
+  <div style="display: flex; border-bottom: 1px solid var(--border); margin-bottom: 24px; gap: 4px;">
+    <button onclick="showTab('atendimento')" id="tab-atendimento" class="tab-btn active">Atendimento</button>
+    <button onclick="showTab('despesa')"     id="tab-despesa"     class="tab-btn">Despesa</button>
+    <button onclick="showTab('produto')"     id="tab-produto"     class="tab-btn">Produto</button>
   </div>
 
-  <!-- Aba Atendimento -->
+  <!-- ── Aba Atendimento ── -->
   <div id="panel-atendimento">
     <form method="POST" action="{{ url_for('lancamento.registrar_atendimento') }}" id="form-atendimento">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -51,79 +58,62 @@
       <input type="hidden" name="valor" id="valor_input">
       <input type="hidden" name="forma_pagamento" id="forma_input">
 
-      <!-- Serviços -->
-      <div class="mb-6">
-        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Selecione o serviço</p>
+      <div style="margin-bottom: 20px;">
+        <p class="section-label" style="margin-bottom: 12px;">Selecione o serviço</p>
         <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
           {% for s in servicos %}
           <button type="button"
                   onclick="selecionarServico({{ s['id'] }}, {{ s['preco_padrao'] }}, '{{ s['nome'] | e }}')"
                   data-id="{{ s['id'] }}"
-                  class="servico-btn bg-gray-800 hover:bg-gray-700 border border-gray-700 hover:border-brand/50
-                         rounded-xl p-3 text-left transition-all group">
-            <p class="nome-servico text-sm font-medium text-white group-hover:text-brand transition-colors line-clamp-2">{{ s['nome'] }}</p>
-            <p class="text-xs text-emerald-400 mt-1">R$ {{ "%.2f"|format(s['preco_padrao'] / 100) }}</p>
+                  class="servico-btn service-card text-left">
+            <p class="nome-servico" style="font-size: 13px; font-weight: 500; color: var(--text-pri); line-height: 1.3; margin-bottom: 4px;">{{ s['nome'] }}</p>
+            <p class="kpi-value" style="font-size: 12px; color: var(--profit);">R$ {{ "%.2f"|format(s['preco_padrao'] / 100) }}</p>
           </button>
           {% endfor %}
         </div>
       </div>
 
-      <!-- Modal de confirmação (inline) -->
-      <div id="confirm-panel" class="hidden bg-gray-800 border border-gray-700 rounded-2xl p-6">
-        <h3 class="text-base font-semibold text-white mb-1" id="confirm-servico-nome"></h3>
-        <p class="text-sm text-gray-400 mb-5">Confirme os detalhes do atendimento</p>
+      <!-- Confirm panel -->
+      <div id="confirm-panel" class="confirm-panel hidden" style="padding: 22px 24px;">
+        <h3 style="font-size: 15px; font-weight: 600; color: var(--text-pri); margin: 0 0 4px;" id="confirm-servico-nome"></h3>
+        <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 20px;">Confirme os detalhes do atendimento</p>
 
-        <div class="grid sm:grid-cols-2 gap-4 mb-5">
+        <div class="grid sm:grid-cols-2 gap-4" style="margin-bottom: 18px;">
           <div>
-            <label class="block text-xs font-medium text-gray-400 mb-1.5">Valor (R$)</label>
+            <label style="display: block; font-size: 11px; font-weight: 500; color: var(--text-muted); margin-bottom: 6px; letter-spacing: 0.03em;">Valor (R$)</label>
             <input type="number" id="valor_display" step="0.01" min="0"
-                   class="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2.5 text-white text-sm focus:ring-2 focus:ring-brand focus:outline-none"
                    oninput="document.getElementById('valor_input').value = this.value">
           </div>
           <div>
-            <label class="block text-xs font-medium text-gray-400 mb-1.5">Data</label>
-            <input type="date" name="data" value="{{ hoje }}"
-                   class="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2.5 text-white text-sm focus:ring-2 focus:ring-brand focus:outline-none">
+            <label style="display: block; font-size: 11px; font-weight: 500; color: var(--text-muted); margin-bottom: 6px; letter-spacing: 0.03em;">Data</label>
+            <input type="date" name="data" value="{{ hoje }}">
           </div>
         </div>
 
-        <!-- Forma de pagamento -->
-        <div class="mb-5">
-          <label class="block text-xs font-medium text-gray-400 mb-2">Forma de pagamento</label>
-          <div class="flex gap-2">
+        <div style="margin-bottom: 18px;">
+          <label style="display: block; font-size: 11px; font-weight: 500; color: var(--text-muted); margin-bottom: 8px; letter-spacing: 0.03em;">Forma de pagamento</label>
+          <div style="display: flex; gap: 8px;">
             {% for forma in ['PIX', 'DINHEIRO', 'MAQUININHA'] %}
             <button type="button" onclick="selecionarForma('{{ forma }}')"
-                    id="forma-{{ forma }}"
-                    class="forma-btn flex-1 py-2 text-sm font-medium rounded-lg border border-gray-600 text-gray-400
-                           hover:border-brand hover:text-brand transition-colors">
-              {{ forma }}
-            </button>
+                    id="forma-{{ forma }}" class="forma-btn">{{ forma }}</button>
             {% endfor %}
           </div>
         </div>
 
-        <div class="mb-5">
-          <label class="block text-xs font-medium text-gray-400 mb-1.5">Observação (opcional)</label>
-          <input type="text" name="observacao"
-                 class="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2.5 text-white text-sm focus:ring-2 focus:ring-brand focus:outline-none"
-                 placeholder="ex: cliente novo">
+        <div style="margin-bottom: 20px;">
+          <label style="display: block; font-size: 11px; font-weight: 500; color: var(--text-muted); margin-bottom: 6px; letter-spacing: 0.03em;">Observação (opcional)</label>
+          <input type="text" name="observacao" placeholder="ex: cliente novo">
         </div>
 
-        <div class="flex gap-3">
-          <button type="button" onclick="cancelarServico()"
-                  class="flex-1 py-2.5 text-sm font-medium rounded-lg border border-gray-600 text-gray-400 hover:text-white hover:border-gray-500 transition-colors">
-            Cancelar
-          </button>
-          <button type="submit"
-                  class="flex-1 py-2.5 text-sm font-semibold rounded-lg bg-brand hover:bg-emerald-600 text-white transition-colors">
-            Registrar
-          </button>
+        <div style="display: flex; gap: 10px;">
+          <button type="button" onclick="cancelarServico()" class="btn-ghost" style="flex: 1; justify-content: center; padding: 9px 16px;">Cancelar</button>
+          <button type="submit" class="btn-accent" style="flex: 1; justify-content: center; padding: 9px 16px;">Registrar</button>
         </div>
       </div>
     </form>
   </div>
 
-  <!-- Aba Produto -->
+  <!-- ── Aba Produto ── -->
   <div id="panel-produto" class="hidden">
     <form method="POST" action="{{ url_for('estoque.registrar_venda') }}" id="form-produto">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -131,85 +121,73 @@
       <input type="hidden" name="preco_venda" id="prod-preco-input">
 
       {% if produtos %}
-      <div class="mb-6">
-        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Selecione o produto</p>
+      <div style="margin-bottom: 20px;">
+        <p class="section-label" style="margin-bottom: 12px;">Selecione o produto</p>
         <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
           {% for p in produtos %}
           <button type="button"
                   onclick="selecionarProduto({{ p['id'] }}, {{ p['preco_venda'] }}, '{{ p['nome'] | e }}', {{ p['quantidade_estoque'] }})"
                   data-pid="{{ p['id'] }}"
-                  class="produto-btn bg-gray-800 hover:bg-gray-700 border border-gray-700 hover:border-brand/50
-                         rounded-xl p-3 text-left transition-all group
-                         {% if p['quantidade_estoque'] == 0 %}opacity-40 cursor-not-allowed{% endif %}"
+                  class="produto-btn service-card text-left {% if p['quantidade_estoque'] == 0 %}opacity-40 cursor-not-allowed{% endif %}"
                   {% if p['quantidade_estoque'] == 0 %}disabled{% endif %}>
-            <p class="nome-produto text-sm font-medium text-white group-hover:text-brand transition-colors line-clamp-2">{{ p['nome'] }}</p>
-            <p class="text-xs text-emerald-400 mt-1">R$ {{ "%.2f"|format(p['preco_venda'] / 100) }}</p>
-            <p class="text-xs text-gray-500 mt-0.5">{{ p['quantidade_estoque'] }} em estoque</p>
+            <p class="nome-produto" style="font-size: 13px; font-weight: 500; color: var(--text-pri); line-height: 1.3; margin-bottom: 4px;">{{ p['nome'] }}</p>
+            <p class="kpi-value" style="font-size: 12px; color: var(--profit);">R$ {{ "%.2f"|format(p['preco_venda'] / 100) }}</p>
+            <p style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">{{ p['quantidade_estoque'] }} em estoque</p>
           </button>
           {% endfor %}
         </div>
       </div>
 
-      <div id="confirm-produto" class="hidden bg-gray-800 border border-gray-700 rounded-2xl p-6">
-        <h3 class="text-base font-semibold text-white mb-1" id="confirm-prod-nome"></h3>
-        <p class="text-sm text-gray-400 mb-5">Confirme os detalhes da venda</p>
-        <div class="grid sm:grid-cols-3 gap-4 mb-5">
+      <div id="confirm-produto" class="confirm-panel hidden" style="padding: 22px 24px;">
+        <h3 style="font-size: 15px; font-weight: 600; color: var(--text-pri); margin: 0 0 4px;" id="confirm-prod-nome"></h3>
+        <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 20px;">Confirme os detalhes da venda</p>
+        <div class="grid sm:grid-cols-3 gap-4" style="margin-bottom: 20px;">
           <div>
-            <label class="block text-xs font-medium text-gray-400 mb-1.5">Quantidade</label>
-            <input type="number" id="prod-qtd-display" name="quantidade" min="1" value="1" required
-                   class="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2.5 text-white text-sm focus:ring-2 focus:ring-brand focus:outline-none">
-            <p class="text-xs text-gray-500 mt-1">Disponível: <span id="prod-estoque-disp"></span></p>
+            <label style="display: block; font-size: 11px; font-weight: 500; color: var(--text-muted); margin-bottom: 6px; letter-spacing: 0.03em;">Quantidade</label>
+            <input type="number" id="prod-qtd-display" name="quantidade" min="1" value="1" required>
+            <p style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">Disp.: <span id="prod-estoque-disp"></span></p>
           </div>
           <div>
-            <label class="block text-xs font-medium text-gray-400 mb-1.5">Preço unit. (R$)</label>
+            <label style="display: block; font-size: 11px; font-weight: 500; color: var(--text-muted); margin-bottom: 6px; letter-spacing: 0.03em;">Preço unit. (R$)</label>
             <input type="number" id="prod-preco-display" step="0.01" min="0.01" required
-                   class="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2.5 text-white text-sm focus:ring-2 focus:ring-brand focus:outline-none"
                    oninput="document.getElementById('prod-preco-input').value = this.value">
           </div>
           <div>
-            <label class="block text-xs font-medium text-gray-400 mb-1.5">Data</label>
-            <input type="date" name="data" value="{{ hoje }}"
-                   class="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2.5 text-white text-sm focus:ring-2 focus:ring-brand focus:outline-none">
+            <label style="display: block; font-size: 11px; font-weight: 500; color: var(--text-muted); margin-bottom: 6px; letter-spacing: 0.03em;">Data</label>
+            <input type="date" name="data" value="{{ hoje }}">
           </div>
         </div>
-        <div class="flex gap-3">
-          <button type="button" onclick="cancelarProduto()"
-                  class="flex-1 py-2.5 text-sm font-medium rounded-lg border border-gray-600 text-gray-400 hover:text-white hover:border-gray-500 transition-colors">
-            Cancelar
-          </button>
-          <button type="submit"
-                  class="flex-1 py-2.5 text-sm font-semibold rounded-lg bg-brand hover:bg-emerald-600 text-white transition-colors">
-            Registrar venda
-          </button>
+        <div style="display: flex; gap: 10px;">
+          <button type="button" onclick="cancelarProduto()" class="btn-ghost" style="flex: 1; justify-content: center; padding: 9px 16px;">Cancelar</button>
+          <button type="submit" class="btn-accent" style="flex: 1; justify-content: center; padding: 9px 16px;">Registrar venda</button>
         </div>
       </div>
       {% else %}
-      <div class="py-16 text-center text-gray-500">
-        <svg class="w-12 h-12 mx-auto mb-3 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10"/></svg>
-        <p class="mb-3">Nenhum produto ativo no estoque.</p>
-        <a href="{{ url_for('estoque.index') }}" class="text-brand hover:text-emerald-400 text-sm font-medium">Ir para Estoque</a>
+      <div style="padding: 64px 0; text-align: center; color: var(--text-muted);">
+        <svg style="width: 48px; height: 48px; margin: 0 auto 12px; opacity: 0.25;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10"/></svg>
+        <p style="font-size: 13px; margin-bottom: 12px;">Nenhum produto ativo no estoque.</p>
+        <a href="{{ url_for('estoque.index') }}" style="color: var(--accent); font-size: 13px; text-decoration: none;">Ir para Estoque →</a>
       </div>
       {% endif %}
     </form>
   </div>
 
-  <!-- Aba Despesa -->
+  <!-- ── Aba Despesa ── -->
   <div id="panel-despesa" class="hidden">
-    <div class="space-y-5">
+    <div style="display: flex; flex-direction: column; gap: 20px;">
 
-      <!-- Itens frequentes -->
       {% if itens %}
       <div>
-        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Itens frequentes</p>
+        <p class="section-label" style="margin-bottom: 12px;">Itens frequentes</p>
         <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
           {% for item in itens %}
           <button type="button"
                   onclick="preencherItem({{ item['categoria_id'] }}, '{{ item['descricao'] | e }}', {{ item['valor_sugerido'] or 0 }}, {{ item['id'] }})"
                   data-item-id="{{ item['id'] }}"
-                  class="item-btn bg-gray-800 hover:bg-gray-700 border border-gray-700 hover:border-brand/50 rounded-xl p-3 text-left transition-all group">
-            <p class="nome-item text-xs font-medium text-white group-hover:text-brand transition-colors">{{ item['cat_icone'] }} {{ item['descricao'] }}</p>
+                  class="item-btn service-card text-left">
+            <p class="nome-item" style="font-size: 12px; font-weight: 500; color: var(--text-sec); line-height: 1.3;">{{ item['cat_icone'] }} {{ item['descricao'] }}</p>
             {% if item['valor_sugerido'] %}
-            <p class="text-xs text-emerald-400 mt-0.5">R$ {{ "%.2f"|format(item['valor_sugerido'] / 100) }}</p>
+            <p class="kpi-value" style="font-size: 11px; color: var(--profit); margin-top: 3px;">R$ {{ "%.2f"|format(item['valor_sugerido'] / 100) }}</p>
             {% endif %}
           </button>
           {% endfor %}
@@ -217,62 +195,54 @@
       </div>
       {% endif %}
 
-      <!-- Formulário de despesa -->
       <div>
-        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Detalhes da despesa</p>
-        <form id="form-despesa" method="POST" action="{{ url_for('lancamento.registrar_despesa') }}" class="space-y-4">
+        <p class="section-label" style="margin-bottom: 12px;">Detalhes da despesa</p>
+        <form id="form-despesa" method="POST" action="{{ url_for('lancamento.registrar_despesa') }}"
+              class="card" style="padding: 20px 22px;">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <input type="hidden" name="item_frequente_id" id="item_id_input">
 
-          <div>
-            <label class="block text-xs font-medium text-gray-400 mb-1.5">Categoria</label>
-            <select name="categoria_id" id="categoria_select"
-                    class="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2.5 text-white text-sm focus:ring-2 focus:ring-brand focus:outline-none">
-              {% for cat in categorias %}
-              <option value="{{ cat['id'] }}">{{ cat['icone'] }} {{ cat['nome'] }}</option>
-              {% endfor %}
-            </select>
-          </div>
-
-          <div>
-            <label class="block text-xs font-medium text-gray-400 mb-1.5">Descrição</label>
-            <input type="text" name="descricao" id="descricao_input" required
-                   class="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2.5 text-white text-sm focus:ring-2 focus:ring-brand focus:outline-none"
-                   placeholder="ex: Lâmina Gillette">
-          </div>
-
-          <div class="grid grid-cols-2 gap-3">
+          <div style="display: flex; flex-direction: column; gap: 16px;">
             <div>
-              <label class="block text-xs font-medium text-gray-400 mb-1.5">Valor (R$)</label>
-              <input type="number" name="valor" id="valor_desp_input" step="0.01" min="0.01" required
-                     class="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2.5 text-white text-sm focus:ring-2 focus:ring-brand focus:outline-none">
+              <label style="display: block; font-size: 11px; font-weight: 500; color: var(--text-muted); margin-bottom: 6px; letter-spacing: 0.03em;">Categoria</label>
+              <select name="categoria_id" id="categoria_select" style="width: 100%;">
+                {% for cat in categorias %}
+                <option value="{{ cat['id'] }}">{{ cat['icone'] }} {{ cat['nome'] }}</option>
+                {% endfor %}
+              </select>
             </div>
+
             <div>
-              <label class="block text-xs font-medium text-gray-400 mb-1.5">Data</label>
-              <input type="date" name="data" value="{{ hoje }}"
-                     class="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2.5 text-white text-sm focus:ring-2 focus:ring-brand focus:outline-none">
+              <label style="display: block; font-size: 11px; font-weight: 500; color: var(--text-muted); margin-bottom: 6px; letter-spacing: 0.03em;">Descrição</label>
+              <input type="text" name="descricao" id="descricao_input" required placeholder="ex: Lâmina Gillette" style="width: 100%;">
             </div>
-          </div>
 
-          <div>
-            <label class="block text-xs font-medium text-gray-400 mb-2">Forma de pagamento</label>
-            <div class="flex gap-2">
-              {% for forma in ['PIX', 'DINHEIRO', 'MAQUININHA'] %}
-              <button type="button" onclick="selecionarFormaDespesa('{{ forma }}')"
-                      id="desp-forma-{{ forma }}"
-                      class="desp-forma-btn flex-1 py-2 text-sm font-medium rounded-lg border border-gray-600 text-gray-400
-                             hover:border-brand hover:text-brand transition-colors">
-                {{ forma }}
-              </button>
-              {% endfor %}
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label style="display: block; font-size: 11px; font-weight: 500; color: var(--text-muted); margin-bottom: 6px; letter-spacing: 0.03em;">Valor (R$)</label>
+                <input type="number" name="valor" id="valor_desp_input" step="0.01" min="0.01" required style="width: 100%;">
+              </div>
+              <div>
+                <label style="display: block; font-size: 11px; font-weight: 500; color: var(--text-muted); margin-bottom: 6px; letter-spacing: 0.03em;">Data</label>
+                <input type="date" name="data" value="{{ hoje }}" style="width: 100%;">
+              </div>
             </div>
-            <input type="hidden" name="forma_pagamento" id="forma_desp_input" required>
-          </div>
 
-          <button type="submit"
-                  class="w-full py-2.5 text-sm font-semibold rounded-lg bg-brand hover:bg-emerald-600 text-white transition-colors">
-            Registrar despesa
-          </button>
+            <div>
+              <label style="display: block; font-size: 11px; font-weight: 500; color: var(--text-muted); margin-bottom: 8px; letter-spacing: 0.03em;">Forma de pagamento</label>
+              <div style="display: flex; gap: 8px;">
+                {% for forma in ['PIX', 'DINHEIRO', 'MAQUININHA'] %}
+                <button type="button" onclick="selecionarFormaDespesa('{{ forma }}')"
+                        id="desp-forma-{{ forma }}" class="desp-forma-btn">{{ forma }}</button>
+                {% endfor %}
+              </div>
+              <input type="hidden" name="forma_pagamento" id="forma_desp_input" required>
+            </div>
+
+            <button type="submit" class="btn-accent" style="width: 100%; justify-content: center; padding: 10px 16px; font-size: 13px;">
+              Registrar despesa
+            </button>
+          </div>
         </form>
       </div>
     </div>
@@ -289,9 +259,8 @@ function showTab(tab) {
   ['atendimento', 'despesa', 'produto'].forEach(t => {
     document.getElementById('panel-' + t).classList.toggle('hidden', t !== tab);
     const btn = document.getElementById('tab-' + t);
-    btn.classList.remove('bg-gray-700', 'text-white', 'text-gray-400');
-    if (t === tab) btn.classList.add('bg-gray-700', 'text-white');
-    else btn.classList.add('text-gray-400');
+    if (t === tab) btn.classList.add('active');
+    else btn.classList.remove('active');
   });
 }
 
@@ -304,12 +273,9 @@ function selecionarProduto(id, preco, nome, estoque) {
   document.getElementById('prod-estoque-disp').textContent = estoque;
   document.getElementById('confirm-prod-nome').textContent = nome;
 
-  document.querySelectorAll('.produto-btn').forEach(b => {
-    b.classList.remove('servico-selecionado', 'border-brand', 'bg-gray-700');
-    b.classList.add('border-gray-700');
-  });
+  document.querySelectorAll('.produto-btn').forEach(b => b.classList.remove('selected'));
   const btn = document.querySelector(`.produto-btn[data-pid="${id}"]`);
-  if (btn) { btn.classList.add('servico-selecionado'); btn.classList.remove('border-gray-700'); }
+  if (btn) btn.classList.add('selected');
 
   document.getElementById('confirm-produto').classList.remove('hidden');
   document.getElementById('confirm-produto').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -317,10 +283,7 @@ function selecionarProduto(id, preco, nome, estoque) {
 
 function cancelarProduto() {
   document.getElementById('confirm-produto').classList.add('hidden');
-  document.querySelectorAll('.produto-btn').forEach(b => {
-    b.classList.remove('servico-selecionado', 'border-brand', 'bg-gray-700');
-    b.classList.add('border-gray-700');
-  });
+  document.querySelectorAll('.produto-btn').forEach(b => b.classList.remove('selected'));
 }
 
 function selecionarServico(id, preco, nome) {
@@ -330,51 +293,35 @@ function selecionarServico(id, preco, nome) {
   document.getElementById('valor_input').value = (preco / 100).toFixed(2);
   document.getElementById('confirm-servico-nome').textContent = nome;
 
-  // Highlight
-  document.querySelectorAll('.servico-btn').forEach(b => {
-    b.classList.remove('servico-selecionado', 'border-brand', 'bg-gray-700');
-    b.classList.add('border-gray-700');
-  });
+  document.querySelectorAll('.servico-btn').forEach(b => b.classList.remove('selected'));
   const btn = document.querySelector(`.servico-btn[data-id="${id}"]`);
-  if (btn) { btn.classList.add('servico-selecionado'); btn.classList.remove('border-gray-700'); }
+  if (btn) btn.classList.add('selected');
 
   document.getElementById('confirm-panel').classList.remove('hidden');
   document.getElementById('confirm-panel').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 
-  // Pré-seleciona forma padrão
   const defaultForma = document.body.dataset.defaultForma || 'PIX';
   selecionarForma(defaultForma);
 }
 
 function cancelarServico() {
   document.getElementById('confirm-panel').classList.add('hidden');
-  document.querySelectorAll('.servico-btn').forEach(b => {
-    b.classList.remove('servico-selecionado', 'border-brand', 'bg-gray-700');
-    b.classList.add('border-gray-700');
-  });
+  document.querySelectorAll('.servico-btn').forEach(b => b.classList.remove('selected'));
   servicoSelecionadoId = null;
 }
 
 function selecionarForma(forma) {
   document.getElementById('forma_input').value = forma;
-  document.querySelectorAll('.forma-btn').forEach(b => {
-    b.classList.remove('border-brand', 'text-brand', 'bg-brand/10');
-    b.classList.add('border-gray-600', 'text-gray-400');
-  });
+  document.querySelectorAll('.forma-btn').forEach(b => b.classList.remove('selected'));
   const btn = document.getElementById('forma-' + forma);
-  btn.classList.add('border-brand', 'text-brand', 'bg-brand/10');
-  btn.classList.remove('border-gray-600', 'text-gray-400');
+  if (btn) btn.classList.add('selected');
 }
 
 function selecionarFormaDespesa(forma) {
   document.getElementById('forma_desp_input').value = forma;
-  document.querySelectorAll('.desp-forma-btn').forEach(b => {
-    b.classList.remove('border-brand', 'text-brand', 'bg-brand/10');
-    b.classList.add('border-gray-600', 'text-gray-400');
-  });
+  document.querySelectorAll('.desp-forma-btn').forEach(b => b.classList.remove('selected'));
   const btn = document.getElementById('desp-forma-' + forma);
-  btn.classList.add('border-brand', 'text-brand', 'bg-brand/10');
-  btn.classList.remove('border-gray-600', 'text-gray-400');
+  if (btn) btn.classList.add('selected');
 }
 
 function preencherItem(catId, descricao, valor, itemId) {
@@ -383,15 +330,10 @@ function preencherItem(catId, descricao, valor, itemId) {
   document.getElementById('item_id_input').value = itemId;
   if (valor > 0) document.getElementById('valor_desp_input').value = (valor / 100).toFixed(2);
 
-  document.querySelectorAll('.item-btn').forEach(b => {
-    b.classList.remove('servico-selecionado', 'border-brand', 'bg-gray-700');
-    b.classList.add('border-gray-700');
-  });
+  document.querySelectorAll('.item-btn').forEach(b => b.classList.remove('selected'));
   const btn = document.querySelector(`.item-btn[data-item-id="${itemId}"]`);
-  if (btn) { btn.classList.add('servico-selecionado'); btn.classList.remove('border-gray-700'); }
+  if (btn) btn.classList.add('selected');
 }
-
-// ── Registro direto: fetch imediato, sem fila ──
 
 document.getElementById('form-atendimento').addEventListener('submit', async function(e) {
   e.preventDefault();
@@ -427,7 +369,7 @@ document.getElementById('form-despesa').addEventListener('submit', async functio
   const valor = document.getElementById('valor_desp_input').value;
   if (!valor || parseFloat(valor) <= 0) { FluxReg.showToast('Informe o valor.', 'error'); return; }
   const descricao = document.getElementById('descricao_input').value.trim();
-  if (!descricao) { FluxReg.showToast('Informe a descricao.', 'error'); return; }
+  if (!descricao) { FluxReg.showToast('Informe a descrição.', 'error'); return; }
 
   const catSelect = document.getElementById('categoria_select');
   const btn = this.querySelector('button[type="submit"]');
@@ -448,14 +390,8 @@ document.getElementById('form-despesa').addEventListener('submit', async functio
     document.getElementById('valor_desp_input').value = '';
     document.getElementById('item_id_input').value = '';
     document.getElementById('forma_desp_input').value = '';
-    document.querySelectorAll('.desp-forma-btn').forEach(b => {
-      b.classList.remove('border-brand', 'text-brand', 'bg-brand/10');
-      b.classList.add('border-gray-600', 'text-gray-400');
-    });
-    document.querySelectorAll('.item-btn').forEach(b => {
-      b.classList.remove('servico-selecionado', 'border-brand', 'bg-gray-700');
-      b.classList.add('border-gray-700');
-    });
+    document.querySelectorAll('.desp-forma-btn').forEach(b => b.classList.remove('selected'));
+    document.querySelectorAll('.item-btn').forEach(b => b.classList.remove('selected'));
   } else {
     FluxReg.showToast('Erro ao registrar. Verifique sua conexão.', 'error');
   }
@@ -465,8 +401,8 @@ document.getElementById('form-produto').addEventListener('submit', async functio
   e.preventDefault();
   const quantidade = parseInt(document.getElementById('prod-qtd-display').value);
   const precoVenda = document.getElementById('prod-preco-display').value;
-  if (!quantidade || quantidade < 1) { FluxReg.showToast('Quantidade invalida.', 'error'); return; }
-  if (!precoVenda || parseFloat(precoVenda) <= 0) { FluxReg.showToast('Preco invalido.', 'error'); return; }
+  if (!quantidade || quantidade < 1) { FluxReg.showToast('Quantidade inválida.', 'error'); return; }
+  if (!precoVenda || parseFloat(precoVenda) <= 0) { FluxReg.showToast('Preço inválido.', 'error'); return; }
 
   const prodNome = document.getElementById('confirm-prod-nome').textContent;
   const btn = this.querySelector('button[type="submit"]');

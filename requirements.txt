@@ -16,6 +16,8 @@ anthropic
 firebase-admin
 stripe
 resend
+authlib
+requests
 
 # CLI
 typer>=0.12
