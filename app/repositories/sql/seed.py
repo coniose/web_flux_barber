@@ -1,18 +1,47 @@
-"""Seed inicial do banco SQLite por usuário.
+"""Seed inicial do banco SQLite por usuário (web).
 
-Popula o DB com o catálogo inicial se estiver vazio. Idempotente.
+Popula o DB com exemplos genéricos editáveis. Idempotente.
+Valores em CENTAVOS.
 """
 
 from __future__ import annotations
 
 import sqlite3
 
-from app.repositories.seed import (
-    CATEGORIAS_DESPESA,
-    CONFIGS,
-    ITENS_FREQUENTES,
-    SERVICOS,
-)
+# 2 serviços genéricos — renomeie em Configurações
+_SERVICOS = [
+    ("Serviço básico",    5000, "Serviço", 1),
+    ("Serviço completo", 10000, "Serviço", 2),
+]
+
+# Categorias de despesa genéricas
+_CATEGORIAS_DESPESA = [
+    ("Insumos / Produtos",  "🧴"),
+    ("Bebidas & Alimentos", "🥤"),
+    ("Infraestrutura",      "🏠"),
+    ("Manutenção",          "🔧"),
+    ("Impostos",            "📄"),
+    ("Pessoal",             "👤"),
+    ("Outros",              "📦"),
+]
+
+# 2 itens frequentes de exemplo
+_ITENS_FREQUENTES = [
+    ("Material de uso",      "Insumos / Produtos", None),
+    ("Conta fixa (aluguel)", "Infraestrutura",     None),
+]
+
+# 2 produtos genéricos no estoque — renomeie em Estoque
+_PRODUTOS = [
+    ("Produto exemplo 1", 1000, 2000, 5),
+    ("Produto exemplo 2", 2000, 4000, 3),
+]
+
+_CONFIGS = [
+    ("nome_empresa", "Meu Negócio"),
+    ("meta_mensal",  "0"),
+    ("ano_contabil", "2026"),
+]
 
 
 def apply_seed(conn: sqlite3.Connection) -> None:
@@ -23,25 +52,22 @@ def apply_seed(conn: sqlite3.Connection) -> None:
 
     conn.execute("BEGIN")
     try:
-        # Serviços
         conn.executemany(
             "INSERT INTO servico (nome, preco_padrao, categoria_servico, ordem, ativo) VALUES (?, ?, ?, ?, 1)",
-            SERVICOS,
+            _SERVICOS,
         )
 
-        # Categorias de despesa
         conn.executemany(
             "INSERT INTO categoria_despesa (nome, icone, ativo) VALUES (?, ?, 1)",
-            CATEGORIAS_DESPESA,
+            _CATEGORIAS_DESPESA,
         )
 
-        # Itens frequentes — resolve categoria_id a partir do nome
         categorias = dict(
             conn.execute("SELECT nome, id FROM categoria_despesa").fetchall()
         )
         rows_itens = [
             (desc, categorias[cat_nome], valor)
-            for desc, cat_nome, valor in ITENS_FREQUENTES
+            for desc, cat_nome, valor in _ITENS_FREQUENTES
             if cat_nome in categorias
         ]
         conn.executemany(
@@ -49,10 +75,14 @@ def apply_seed(conn: sqlite3.Connection) -> None:
             rows_itens,
         )
 
-        # Config
         conn.executemany(
             "INSERT OR IGNORE INTO config (chave, valor) VALUES (?, ?)",
-            CONFIGS,
+            _CONFIGS,
+        )
+
+        conn.executemany(
+            "INSERT OR IGNORE INTO produto (nome, preco_custo, preco_venda, quantidade_estoque) VALUES (?, ?, ?, ?)",
+            _PRODUTOS,
         )
 
         conn.execute("COMMIT")
